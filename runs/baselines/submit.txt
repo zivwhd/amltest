@@ -1,0 +1,203 @@
+#!/bin/bash
+
+## resource allocation
+#SBATCH --job-name=BL_
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
+
+#SBATCH --qos=gpu
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=30g
+#SBATCH --gpus=1
+#SBATCH --nodelist=gpu8
+
+#SBATCH --no-requeue
+
+
+## modules and apps
+module load anaconda3
+source activate NEEA
+
+## run
+python run_baselines.py imdb deep_lift BERT
+python run_baselines.py imdb gradient_shap BERT
+python run_baselines.py imdb input_x_gradient BERT
+python run_baselines.py imdb integrated_gradients BERT
+python run_baselines.py imdb sequential_integrated_gradients BERT
+python run_baselines.py imdb decompX BERT
+python run_baselines.py imdb alti BERT
+python run_baselines.py imdb glob_enc BERT
+python run_baselines.py imdb glob_enc_dim_0 BERT
+python run_baselines.py emotions deep_lift BERT
+python run_baselines.py emotions gradient_shap BERT
+python run_baselines.py emotions input_x_gradient BERT
+python run_baselines.py emotions integrated_gradients BERT
+python run_baselines.py emotions sequential_integrated_gradients BERT
+python run_baselines.py emotions decompX BERT
+python run_baselines.py emotions alti BERT
+python run_baselines.py emotions glob_enc BERT
+python run_baselines.py emotions glob_enc_dim_0 BERT
+python run_baselines.py sst deep_lift BERT
+python run_baselines.py sst gradient_shap BERT
+python run_baselines.py sst input_x_gradient BERT
+python run_baselines.py sst integrated_gradients BERT
+python run_baselines.py sst sequential_integrated_gradients BERT
+python run_baselines.py sst decompX BERT
+python run_baselines.py sst alti BERT
+python run_baselines.py sst glob_enc BERT
+python run_baselines.py sst glob_enc_dim_0 BERT
+python run_baselines.py agn deep_lift BERT
+python run_baselines.py agn gradient_shap BERT
+python run_baselines.py agn input_x_gradient BERT
+python run_baselines.py agn integrated_gradients BERT
+python run_baselines.py agn sequential_integrated_gradients BERT
+python run_baselines.py agn decompX BERT
+python run_baselines.py agn alti BERT
+python run_baselines.py agn glob_enc BERT
+python run_baselines.py agn glob_enc_dim_0 BERT
+python run_baselines.py rtn deep_lift BERT
+python run_baselines.py rtn gradient_shap BERT
+python run_baselines.py rtn input_x_gradient BERT
+python run_baselines.py rtn integrated_gradients BERT
+python run_baselines.py rtn sequential_integrated_gradients BERT
+python run_baselines.py rtn decompX BERT
+python run_baselines.py rtn alti BERT
+python run_baselines.py rtn glob_enc BERT
+python run_baselines.py rtn glob_enc_dim_0 BERT
+python run_baselines.py imdb deep_lift ROBERTA
+python run_baselines.py imdb gradient_shap ROBERTA
+python run_baselines.py imdb input_x_gradient ROBERTA
+python run_baselines.py imdb integrated_gradients ROBERTA
+python run_baselines.py imdb sequential_integrated_gradients ROBERTA
+python run_baselines.py imdb decompX ROBERTA
+python run_baselines.py imdb alti ROBERTA
+python run_baselines.py imdb glob_enc ROBERTA
+python run_baselines.py imdb glob_enc_dim_0 ROBERTA
+python run_baselines.py emotions deep_lift ROBERTA
+python run_baselines.py emotions gradient_shap ROBERTA
+python run_baselines.py emotions input_x_gradient ROBERTA
+python run_baselines.py emotions integrated_gradients ROBERTA
+python run_baselines.py emotions sequential_integrated_gradients ROBERTA
+python run_baselines.py emotions decompX ROBERTA
+python run_baselines.py emotions alti ROBERTA
+python run_baselines.py emotions glob_enc ROBERTA
+python run_baselines.py emotions glob_enc_dim_0 ROBERTA
+python run_baselines.py sst deep_lift ROBERTA
+python run_baselines.py sst gradient_shap ROBERTA
+python run_baselines.py sst input_x_gradient ROBERTA
+python run_baselines.py sst integrated_gradients ROBERTA
+python run_baselines.py sst sequential_integrated_gradients ROBERTA
+python run_baselines.py sst decompX ROBERTA
+python run_baselines.py sst alti ROBERTA
+python run_baselines.py sst glob_enc ROBERTA
+python run_baselines.py sst glob_enc_dim_0 ROBERTA
+python run_baselines.py agn deep_lift ROBERTA
+python run_baselines.py agn gradient_shap ROBERTA
+python run_baselines.py agn input_x_gradient ROBERTA
+python run_baselines.py agn integrated_gradients ROBERTA
+python run_baselines.py agn sequential_integrated_gradients ROBERTA
+python run_baselines.py agn decompX ROBERTA
+python run_baselines.py agn alti ROBERTA
+python run_baselines.py agn glob_enc ROBERTA
+python run_baselines.py agn glob_enc_dim_0 ROBERTA
+python run_baselines.py rtn deep_lift ROBERTA
+python run_baselines.py rtn gradient_shap ROBERTA
+python run_baselines.py rtn input_x_gradient ROBERTA
+python run_baselines.py rtn integrated_gradients ROBERTA
+python run_baselines.py rtn sequential_integrated_gradients ROBERTA
+python run_baselines.py rtn decompX ROBERTA
+python run_baselines.py rtn alti ROBERTA
+python run_baselines.py rtn glob_enc ROBERTA
+python run_baselines.py rtn glob_enc_dim_0 ROBERTA
+python run_baselines.py imdb deep_lift DISTILBERT
+python run_baselines.py imdb gradient_shap DISTILBERT
+python run_baselines.py imdb input_x_gradient DISTILBERT
+python run_baselines.py imdb integrated_gradients DISTILBERT
+python run_baselines.py imdb sequential_integrated_gradients DISTILBERT
+python run_baselines.py imdb decompX DISTILBERT
+python run_baselines.py imdb alti DISTILBERT
+python run_baselines.py imdb glob_enc DISTILBERT
+python run_baselines.py imdb glob_enc_dim_0 DISTILBERT
+python run_baselines.py emotions deep_lift DISTILBERT
+python run_baselines.py emotions gradient_shap DISTILBERT
+python run_baselines.py emotions input_x_gradient DISTILBERT
+python run_baselines.py emotions integrated_gradients DISTILBERT
+python run_baselines.py emotions sequential_integrated_gradients DISTILBERT
+python run_baselines.py emotions decompX DISTILBERT
+python run_baselines.py emotions alti DISTILBERT
+python run_baselines.py emotions glob_enc DISTILBERT
+python run_baselines.py emotions glob_enc_dim_0 DISTILBERT
+python run_baselines.py sst deep_lift DISTILBERT
+python run_baselines.py sst gradient_shap DISTILBERT
+python run_baselines.py sst input_x_gradient DISTILBERT
+python run_baselines.py sst integrated_gradients DISTILBERT
+python run_baselines.py sst sequential_integrated_gradients DISTILBERT
+python run_baselines.py sst decompX DISTILBERT
+python run_baselines.py sst alti DISTILBERT
+python run_baselines.py sst glob_enc DISTILBERT
+python run_baselines.py sst glob_enc_dim_0 DISTILBERT
+python run_baselines.py agn deep_lift DISTILBERT
+python run_baselines.py agn gradient_shap DISTILBERT
+python run_baselines.py agn input_x_gradient DISTILBERT
+python run_baselines.py agn integrated_gradients DISTILBERT
+python run_baselines.py agn sequential_integrated_gradients DISTILBERT
+python run_baselines.py agn decompX DISTILBERT
+python run_baselines.py agn alti DISTILBERT
+python run_baselines.py agn glob_enc DISTILBERT
+python run_baselines.py agn glob_enc_dim_0 DISTILBERT
+python run_baselines.py rtn deep_lift DISTILBERT
+python run_baselines.py rtn gradient_shap DISTILBERT
+python run_baselines.py rtn input_x_gradient DISTILBERT
+python run_baselines.py rtn integrated_gradients DISTILBERT
+python run_baselines.py rtn sequential_integrated_gradients DISTILBERT
+python run_baselines.py rtn decompX DISTILBERT
+python run_baselines.py rtn alti DISTILBERT
+python run_baselines.py rtn glob_enc DISTILBERT
+python run_baselines.py rtn glob_enc_dim_0 DISTILBERT
+python run_baselines.py imdb deep_lift LLAMA
+python run_baselines.py imdb gradient_shap LLAMA
+python run_baselines.py imdb input_x_gradient LLAMA
+python run_baselines.py imdb integrated_gradients LLAMA
+python run_baselines.py imdb sequential_integrated_gradients LLAMA
+python run_baselines.py imdb decompX LLAMA
+python run_baselines.py imdb alti LLAMA
+python run_baselines.py imdb glob_enc LLAMA
+python run_baselines.py imdb glob_enc_dim_0 LLAMA
+python run_baselines.py emotions deep_lift LLAMA
+python run_baselines.py emotions gradient_shap LLAMA
+python run_baselines.py emotions input_x_gradient LLAMA
+python run_baselines.py emotions integrated_gradients LLAMA
+python run_baselines.py emotions sequential_integrated_gradients LLAMA
+python run_baselines.py emotions decompX LLAMA
+python run_baselines.py emotions alti LLAMA
+python run_baselines.py emotions glob_enc LLAMA
+python run_baselines.py emotions glob_enc_dim_0 LLAMA
+python run_baselines.py sst deep_lift LLAMA
+python run_baselines.py sst gradient_shap LLAMA
+python run_baselines.py sst input_x_gradient LLAMA
+python run_baselines.py sst integrated_gradients LLAMA
+python run_baselines.py sst sequential_integrated_gradients LLAMA
+python run_baselines.py sst decompX LLAMA
+python run_baselines.py sst alti LLAMA
+python run_baselines.py sst glob_enc LLAMA
+python run_baselines.py sst glob_enc_dim_0 LLAMA
+python run_baselines.py agn deep_lift LLAMA
+python run_baselines.py agn gradient_shap LLAMA
+python run_baselines.py agn input_x_gradient LLAMA
+python run_baselines.py agn integrated_gradients LLAMA
+python run_baselines.py agn sequential_integrated_gradients LLAMA
+python run_baselines.py agn decompX LLAMA
+python run_baselines.py agn alti LLAMA
+python run_baselines.py agn glob_enc LLAMA
+python run_baselines.py agn glob_enc_dim_0 LLAMA
+python run_baselines.py rtn deep_lift LLAMA
+python run_baselines.py rtn gradient_shap LLAMA
+python run_baselines.py rtn input_x_gradient LLAMA
+python run_baselines.py rtn integrated_gradients LLAMA
+python run_baselines.py rtn sequential_integrated_gradients LLAMA
+python run_baselines.py rtn decompX LLAMA
+python run_baselines.py rtn alti LLAMA
+python run_baselines.py rtn glob_enc LLAMA
+python run_baselines.py rtn glob_enc_dim_0 LLAMA
