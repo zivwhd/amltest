@@ -5,14 +5,14 @@ import pandas as pd
 import torch
 
 from config.config import ExpArgs
-from config.constants import INPUT_IDS_NAME, TEXT_PROMPT, LABEL_PROMPT
-from config.types_enums import ModelBackboneTypes
-from main.utils.baselines_utils import get_model, get_data, get_tokenizer
-from utils.utils_functions import get_device
+from config.constants import TEXT_PROMPT, LABEL_PROMPT
+from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
+from utils.utils_functions import get_device, is_model_encoder_only
 
 
 class EvalModel:
     def __init__(self, output_path: str):
+        init_baseline_exp()
         self.task = ExpArgs.task
         os.makedirs(output_path, exist_ok = True)
         self.output_path = f"{output_path}/eval.csv"
@@ -34,17 +34,17 @@ class EvalModel:
                 label = row[1]
                 txt = row[0]
                 self.labels += [str(label)]
-                if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
-                    txt = "\n\n".join([self.task.llama_task_prompt, self.task.llama_few_shots_prompt,
+                if not is_model_encoder_only():
+                    txt = "\n\n".join([self.task.llm_task_prompt, self.task.llm_few_shots_prompt,
                                        "\n".join([TEXT_PROMPT + txt, LABEL_PROMPT])])
 
                 batch = self.tokenizer([txt], truncation = True, padding = False, return_tensors = "pt").to(self.device)
 
-                if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
-                    cls_output_logits = self.model(input_ids = batch[INPUT_IDS_NAME].cuda()).logits[:, -1, :]
+                if not is_model_encoder_only():
+                    cls_output_logits = self.model(input_ids = batch.input_ids.cuda()).logits[:, -1, :]
                     new_pred = self.tokenizer.batch_decode(torch.argmax(cls_output_logits, dim = -1))[0]
                 else:
-                    cls_output_logits = self.model(input_ids = batch[INPUT_IDS_NAME].cuda()).logits
+                    cls_output_logits = self.model(input_ids = batch.input_ids.cuda()).logits
                     new_pred = str(torch.argmax(cls_output_logits, dim = -1)[0].item())
                 self.preds.append(new_pred)
 

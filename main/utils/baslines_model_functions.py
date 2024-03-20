@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from config.config import BackbonesMetaData, ExpArgs
 from config.types_enums import ModelBackboneTypes
-from utils.utils_functions import run_model
+from utils.utils_functions import run_model, is_model_encoder_only
 
 
 class ForwardModel(nn.Module):
@@ -23,7 +23,7 @@ class ForwardModel(nn.Module):
         embeds = getattr(self.model, self.model_name).embeddings.dropout(
             getattr(self.model, self.model_name).embeddings.LayerNorm(embeds))
         pred = run_model(model = self.model, inputs_embeds = embeds, attention_mask = attention_mask,
-                         is_return_logits = True, model_backbone = ExpArgs.explained_model_backbone)
+                         is_return_logits = True)
 
         # Return all logits or just maximum class
         if return_all_logits:
@@ -70,13 +70,10 @@ def construct_attention_mask(input_ids):
 
 def get_word_embeddings(model):
     model_name = BackbonesMetaData.name[ExpArgs.explained_model_backbone]
-    if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
-        return getattr(model, model_name).get_input_embeddings().weight
-    elif ExpArgs.explained_model_backbone in [ModelBackboneTypes.BERT.value, ModelBackboneTypes.ROBERTA.value,
-                                              ModelBackboneTypes.DISTILBERT.value]:
+    if is_model_encoder_only():
         return getattr(model, model_name).embeddings.word_embeddings.weight
     else:
-        raise ValueError(f"get_word_embeddings unsupported model - {ExpArgs.explained_model_backbone}")
+        return getattr(model, model_name).get_input_embeddings().weight
 
 
 def construct_word_embedding(model, model_name, input_ids):
@@ -120,10 +117,10 @@ def get_tokens(tokenizer, text_ids):
 
 
 def get_inputs(tokenizer, model, model_name, ref_token, text, device):
-    if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
-        return get_inputs_llama(tokenizer, model, model_name, ref_token, text, device)
-    else:
+    if is_model_encoder_only():
         return get_inputs_encoder_only(tokenizer, model, model_name, ref_token, text, device)
+    else:
+        return get_inputs_llm(tokenizer, model, model_name, ref_token, text, device)
 
 
 def get_inputs_encoder_only(tokenizer, model, model_name, ref_token, text, device):
@@ -149,7 +146,7 @@ def get_inputs_encoder_only(tokenizer, model, model_name, ref_token, text, devic
             ref_type_embed, attention_mask,)
 
 
-def get_inputs_llama(tokenizer, model, model_name, ref_token, text, device):
+def get_inputs_llm(tokenizer, model, model_name, ref_token, text, device):
     ref_token_id = ref_token
     sep_token_id = tokenizer.encode(tokenizer.special_tokens_map["eos_token"])[0]
 

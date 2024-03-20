@@ -6,6 +6,7 @@ class ModelBackboneTypes(Enum):
     ROBERTA = 'ROBERTA'
     DISTILBERT = 'DISTILBERT'
     LLAMA = 'LLAMA'
+    MISTRAL = 'MISTRAL'
 
 
 class EvalMetric(Enum):
@@ -14,8 +15,6 @@ class EvalMetric(Enum):
     EVAL_LOG_ODDS = 'EVAL_LOG_ODDS'
     AOPC_SUFFICIENCY = 'AOPC_SUFFICIENCY'
     AOPC_COMPREHENSIVENESS = 'AOPC_COMPREHENSIVENESS'
-    POS_AUC_WITH_REFERENCE_TOKEN = 'POS_AUC_WITH_REFERENCE_TOKEN'
-    NEG_AUC_WITH_REFERENCE_TOKEN = 'NEG_AUC_WITH_REFERENCE_TOKEN'
 
 
 class DirectionTypes(Enum):
@@ -49,3 +48,10 @@ class AttrScoreFunctions(Enum):
     alti = 'alti'
     glob_enc = 'glob_enc'
     glob_enc_dim_0 = 'glob_enc_dim_0'
+
+
+
+class EvalTokens(Enum):
+    ALL_TOKENS = 'ALL_TOKENS'
+    NO_CLS = 'NO_CLS'
+    NO_SPECIAL_TOKENS = 'NO_SPECIAL_TOKENS'

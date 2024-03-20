@@ -8,7 +8,7 @@ from transformers import AutoTokenizer
 from config.config import ExpArgs
 from config.constants import HF_CACHE
 from config.types_enums import ModelBackboneTypes
-from utils.dataclasses import Task
+from utils.utils_functions import is_model_encoder_only
 
 
 def init_baseline_exp():
@@ -50,11 +50,11 @@ def get_model():
     elif ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
         from transformers import LlamaForCausalLM
         model_path = task.llama_model
-        if ExpArgs.llama_f16:
-            model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype = torch.float16, cache_dir = HF_CACHE)
-        else:
-            model = LlamaForCausalLM.from_pretrained(model_path, cache_dir = HF_CACHE)
-
+        model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype = torch.float16, cache_dir = HF_CACHE)
+    elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
+        from transformers import MistralForCausalLM
+        model_path = task.mistral_model
+        model = MistralForCausalLM.from_pretrained(model_path, torch_dtype = torch.float16, cache_dir = HF_CACHE)
     else:
         raise ValueError("unsupported explained_model_backbone selected")
     return model, model_path
@@ -62,9 +62,12 @@ def get_model():
 
 def get_tokenizer(model_path: str):
     task = ExpArgs.task
-    if task.llama_max_length and (ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value):
-        return AutoTokenizer.from_pretrained(model_path, max_length = task.llama_max_length)
-    return AutoTokenizer.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+    # SET MAX LENGTH
+    if task.is_llm_set_max_len and (not is_model_encoder_only()):
+        tokenizer.model_max_length = task.llm_explained_tokenizer_max_length
+    return tokenizer
 
 
 def get_data():

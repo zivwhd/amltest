@@ -1,4 +1,5 @@
 import time
+from typing import Tuple
 
 import torch
 from torch import Tensor
@@ -16,6 +17,17 @@ def conv_class_to_dict(item):
 
 def get_device():
     return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def is_model_encoder_only(model = None):
+    if model is None:
+        model = ExpArgs.explained_model_backbone
+    if model in [ModelBackboneTypes.LLAMA.value, ModelBackboneTypes.MISTRAL.value]:
+        return False
+    if model in [ModelBackboneTypes.ROBERTA.value, ModelBackboneTypes.BERT.value, ModelBackboneTypes.DISTILBERT.value]:
+        return True
+
+    raise ValueError(f"unsupported model: {model}")
 
 
 def calculate_num_of_trainable_params(model) -> int:
@@ -39,22 +51,18 @@ def get_current_time():
     return int(round(time.time()))
 
 
-def run_model(model, model_backbone, input_ids: Tensor = None, attention_mask: Tensor = None,
-              inputs_embeds: Tensor = None, is_return_logits: bool = False, is_return_output: bool = False):
-    if model_backbone == ModelBackboneTypes.LLAMA.value:
-        # max_new_tokens = ExpArgs.llama_new_generate_tokens
+def run_model(model, input_ids: Tensor = None, attention_mask: Tensor = None, inputs_embeds: Tensor = None,
+              is_return_logits: bool = False, is_return_output: bool = False):
+    if is_model_encoder_only():
+        model_output = model(input_ids = input_ids, attention_mask = attention_mask, inputs_embeds = inputs_embeds)
+        logits = model_output.logits
+    else:
         if inputs_embeds is not None:
-            inputs_embeds = inputs_embeds.to(torch.float16)
+            inputs_embeds = inputs_embeds.half()
             model_output = model(inputs_embeds = inputs_embeds).logits[:, -1, :]
         else:
             model_output = model(input_ids = input_ids).logits[:, -1, :]
         logits = model_output[:, ExpArgs.labels_tokens_opt]
-        logits = torch.clip(logits, -10e10, 10e10)  # TODO is it ok??
-
-
-    else:
-        model_output = model(input_ids = input_ids, attention_mask = attention_mask, inputs_embeds = inputs_embeds)
-        logits = model_output.logits
 
     if is_return_logits and is_return_output:
         return model_output, logits
@@ -69,14 +77,18 @@ def run_model(model, model_backbone, input_ids: Tensor = None, attention_mask: T
         raise ValueError(f"must choose model output option")
 
 
-def model_seq_cls_merge_inputs(inputs, task_prompt_embeds, label_prompt_embeds):
-    if ExpArgs.explained_model_backbone != ModelBackboneTypes.LLAMA.value:
-        if type(inputs) == list:
-            return torch.stack(inputs)
-        return inputs
+# works for input_ids / embeddings
 
-    merged_inputs = []
-    for item_idx in range(len(task_prompt_embeds)):
-        merged_inputs.append(
-            torch.concat([task_prompt_embeds[item_idx], inputs[item_idx], label_prompt_embeds], axis = 0))
-    return torch.stack(merged_inputs)
+def merge_prompts(inputs, attention_mask, task_prompt_input_ids: Tensor = None, label_prompt_input_ids: Tensor = None,
+                  task_prompt_attention_mask: Tensor = None, label_prompt_attention_mask: Tensor = None) -> Tuple[
+    Tensor, Tensor]:
+    if is_model_encoder_only():
+        return inputs, attention_mask
+
+    if any(item is None for item in [task_prompt_input_ids, inputs, label_prompt_input_ids]):
+        raise ValueError("can not be None")
+    merged_inputs = torch.cat([task_prompt_input_ids, inputs, label_prompt_input_ids], dim = 1)
+    merged_attention_mask = torch.cat([task_prompt_attention_mask, attention_mask, label_prompt_attention_mask],
+                                      dim = 1)
+
+    return merged_inputs, merged_attention_mask

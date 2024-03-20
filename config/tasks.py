@@ -1,3 +1,4 @@
+from config.constants import LOCAL_MODELS_PREFIX
 from utils.dataclasses import Task
 
 IMDB_TASK: Task = Task(dataset_name = "imdb", dataset_train = "train", dataset_val = "train", dataset_test = "test",
@@ -5,15 +6,13 @@ IMDB_TASK: Task = Task(dataset_name = "imdb", dataset_train = "train", dataset_v
                        bert_fine_tuned_model = "textattack/bert-base-uncased-imdb",
                        roberta_fine_tuned_model = "textattack/roberta-base-imdb",
                        distilbert_fine_tuned_model = "textattack/distilbert-base-uncased-imdb",
-                       roberta_base_model = "FacebookAI/roberta-base",
-                       distilbert_base_model = "distilbert/distilbert-base-uncased",
-                       bert_base_model = "bert-base-uncased", labels_str_int_maps = dict(negative = 0, positive = 1),
-                       default_lr = 4e-5, llama_lr = 8e-5, test_sample = 2_000, name = "imdb",
-                       llama_is_for_seq_class = False,
-                       llama_max_length = 400,
-                       llama_model = "/home/yonatanto/work/theza/NEEA/OTHERS/LLAMA_MODELS/meta-llama_Llama-2-7b-hf/model_tokenizer",
-                       llama_task_prompt = "Classify the sentiment of the movie review. For each sentence the label is positive (1) or negative (0)",
-                       llama_few_shots_prompt = [  #
+                       labels_str_int_maps = dict(negative = 0, positive = 1), test_sample = 2_000, name = "imdb",
+                       is_llm_set_max_len = True, llm_explained_tokenizer_max_length = 400,
+                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
+                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
+
+                       llm_task_prompt = "Classify the sentiment of the movie review. For each sentence the label is positive (1) or negative (0)",
+                       llm_few_shots_prompt = [  #
                            (
                                "This movie is so bad, I knew how it ends right after this little girl killed the first person. Very bad acting very bad plot very bad movie<br /><br />do yourself a favour and DON'T watch it 1/10",
                                #
@@ -26,130 +25,119 @@ IMDB_TASK: Task = Task(dataset_name = "imdb", dataset_train = "train", dataset_v
                                #
                                1),
                            ("Long, boring, blasphemous. Never have I been so glad to see ending credits roll", 0)  #
-                       ],  #
-                       baseline_llama_few_shots_prompt = [  #
-                           ("This movie is so bad", 0,  #
-                            ["bad"]),  #
-                           ("Very smart, sometimes shocking, I just love it", 1,  #
-                            ["smart", "shocking", "love"]),  #
-                           ("rich and sudden wisdom", 1,  #
-                            ["wisdom", "rich"]),  #
-                           ("Long, boring, blasphemous. Never have I been so glad to see ending", 0,  #
-                            ["Long", "boring", "blasphemous", "ending"])])
+                       ])
 
 EMOTION_TASK: Task = Task(dataset_name = "emotion", dataset_train = "train", dataset_val = "validation",
                           dataset_test = "test", dataset_column_text = "text", dataset_column_label = "label",
                           bert_fine_tuned_model = "bhadresh-savani/bert-base-uncased-emotion",
                           roberta_fine_tuned_model = "bhadresh-savani/roberta-base-emotion",
                           distilbert_fine_tuned_model = "Rahmat82/DistilBERT-finetuned-on-emotion",
-                          roberta_base_model = "FacebookAI/roberta-base",
-                          distilbert_base_model = "distilbert/distilbert-base-uncased",
-                          bert_base_model = "bert-base-uncased",
-                          llama_model = "/home/yonatanto/work/theza/NEEA/OTHERS/LLAMA_MODELS/meta-llama_Llama-2-7b-hf/model_tokenizer",
-                          labels_str_int_maps = dict(sadness = 0, joy = 1, love = 2, anger = 3, fear = 4, surprise = 5),
-                          default_lr = 4e-5, llama_lr = 8e-5, test_sample = 1_000, name = "emotions",
-                          llama_is_for_seq_class = True,
-                          llama_task_prompt = "Classify the emotion expressed in each sentences. for each sentence the label is sadness (0) or joy (1) or love (2) or anger (3) or fear (4) or surprise (5)",
-                          llama_few_shots_prompt = [('i feel when seeing a child suffering this way', 0),  #
-                                                    ('im feeling a little overwhelmed here recently', 5),  #
-                                                    ('i feel so annoyed', 3),  #
-                                                    ('i do not feel overwhelmed nor rushed', 4),  #
-                                                    ('i shook my head feeling dazed', 5),  #
-                                                    ('i cant feel complacent', 1),  #
-                                                    ('i mean post and i feel rotten abou', 0),  #
-                                                    ('im feeling about as horny as a dead goat', 2),  #
-                                                    ('i feel like an emotional train wreck', 0),  #
-                                                    ('i feel pressured by a dumb feeling', 4),  #
-                                                    ('i miss the feeling of feeling amazing', 5),  #
-                                                    ('i feel so frustrated but i cant tell them i am', 3),  #
-                                                    ('i feel fearful of being near them', 4),  #
-                                                    ('i just feel like its rude', 3),  #
-                                                    ('i didnt really feel like being thankful', 1),  #
-                                                    ('i must feel loving toward everyone', 2),  #
-                                                    ('i felt good and feel fine today too', 1),  #
-                                                    ('i began to feel accepted by gaia on her own terms', 2)  #
+                          llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
+                          mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
 
-                                                    ])
+                          labels_str_int_maps = dict(sadness = 0, joy = 1, love = 2, anger = 3, fear = 4, surprise = 5),
+                          test_sample = None, name = "emotions",
+                          llm_task_prompt = "Classify the emotion expressed in each sentences. for each sentence the label is sadness (0) or joy (1) or love (2) or anger (3) or fear (4) or surprise (5)",
+                          llm_few_shots_prompt = [('i feel when seeing a child suffering this way', 0),  #
+                                                  ('im feeling a little overwhelmed here recently', 5),  #
+                                                  ('i feel so annoyed', 3),  #
+                                                  ('i do not feel overwhelmed nor rushed', 4),  #
+                                                  ('i shook my head feeling dazed', 5),  #
+                                                  ('i cant feel complacent', 1),  #
+                                                  ('i mean post and i feel rotten abou', 0),  #
+                                                  ('im feeling about as horny as a dead goat', 2),  #
+                                                  ('i feel like an emotional train wreck', 0),  #
+                                                  ('i feel pressured by a dumb feeling', 4),  #
+                                                  ('i miss the feeling of feeling amazing', 5),  #
+                                                  ('i feel so frustrated but i cant tell them i am', 3),  #
+                                                  ('i feel fearful of being near them', 4),  #
+                                                  ('i just feel like its rude', 3),  #
+                                                  ('i didnt really feel like being thankful', 1),  #
+                                                  ('i must feel loving toward everyone', 2),  #
+                                                  ('i felt good and feel fine today too', 1),  #
+                                                  ('i began to feel accepted by gaia on her own terms', 2)  #
+
+                                                  ])
 
 SST_TASK: Task = Task(dataset_name = "sst2", dataset_train = "train", dataset_val = "train",
                       dataset_test = "validation", dataset_column_text = "sentence", dataset_column_label = "label",
                       bert_fine_tuned_model = "textattack/bert-base-uncased-SST-2",
                       roberta_fine_tuned_model = "textattack/roberta-base-SST-2",
-                      llama_model = "/home/yonatanto/work/theza/NEEA/OTHERS/LLAMA_MODELS/meta-llama_Llama-2-7b-hf/model_tokenizer",
-                      labels_str_int_maps = dict(n = 0, p = 1),
                       distilbert_fine_tuned_model = "distilbert-base-uncased-finetuned-sst-2-english",
-                      roberta_base_model = "FacebookAI/roberta-base",
-                      distilbert_base_model = "distilbert/distilbert-base-uncased",
-                      bert_base_model = "bert-base-uncased", default_lr = 4e-5, llama_lr = 8e-5, test_sample = None,
-                      name = "sst", llama_is_for_seq_class = False,
-                      llama_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
-                      llama_few_shots_prompt = [("hide new secretions from the parental units", 0),
-                                                ("the greatest musicians", 1),  #
-                                                (
-                                                    "are more deeply thought through than in most ` right-thinking ' films",
-                                                    1),  #
-                                                (
-                                                    "on the worst revenge-of-the-nerds clichés the filmmakers could dredge up",
-                                                    0)  #
-                                                ],  #
-                      baseline_llama_few_shots_prompt = [  #
-                          ("the greatest musicians", 1,  #
-                           ["greatest", "musicians"]),  #
-                          ("look smeary and blurry , to the point of distraction", 0,  #
-                           ["smeary", "blurry", "distraction"]),  #
-                          ("the positive change in tone here seems to have recharged him .	", 1,  #
-                           ["positive", "recharged"]),  #
-                          ("ultra-cheesy dialogue", 0,  #
-                           ["ultra-cheesy"])])
+                      llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
+                      mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
+                      labels_str_int_maps = dict(n = 0, p = 1), test_sample = None, name = "sst",
+                      llm_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
+                      llm_few_shots_prompt = [("hide new secretions from the parental units", 0),
+                                              ("the greatest musicians", 1),  #
+                                              ("are more deeply thought through than in most ` right-thinking ' films",
+                                               1),  #
+                                              (
+                                                  "on the worst revenge-of-the-nerds clichés the filmmakers could dredge up",
+                                                  0)  #
+                                              ])
 
 AGN_TASK: Task = Task(dataset_name = "ag_news", dataset_train = "train", dataset_val = "train", dataset_test = "test",
                       dataset_column_text = "text", dataset_column_label = "label",
                       bert_fine_tuned_model = "fabriceyhc/bert-base-uncased-ag_news",
                       roberta_fine_tuned_model = "textattack/roberta-base-ag-news",
+                      distilbert_fine_tuned_model = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/agn_distillbert",
                       labels_str_int_maps = dict(world = 0, sports = 1, business = 2, sci_tech = 3),
-                      distilbert_fine_tuned_model = '/home/yonatanto/work/theza/NEEA/OTHERS/trained_base_models/agn_distillbert/last_ckp',
-                      default_lr = 4e-5, llama_lr = 8e-5, test_sample = 2_000, name = "agn",
-                      llama_is_for_seq_class = True,
-                      llama_model = "/home/yonatanto/work/theza/NEEA/OTHERS/LLAMA_MODELS/meta-llama_Llama-2-7b-hf/model_tokenizer",
-                      peft_llama_adapter = "/home/yonatanto/work/theza/NEEA/OTHERS/trained_base_models/agn_llama/last_ckp",
-                      llama_task_prompt = "Classify the news articles. for each article label is World (0) Sports (1) Business (2) Sci/Tech (3)",
-                      roberta_base_model = "FacebookAI/roberta-base",
-                      distilbert_base_model = "distilbert/distilbert-base-uncased",
-                      bert_base_model = "bert-base-uncased", llama_few_shots_prompt = [
-        ('Bears Defeat Vikings, 24-14 (AP) AP - Hanging with Chad was a winning experience for the Chicago Bears.', 1),
-        #
-        ("Dual-core IBM PowerPC 'to ship in single-core form' Standalone part - or a dualie with one dud core?", 3),  #
-        ("Students Aiming to Avoid 'Freshman 15' AUSTIN - All-you-can-eat dorm dining. Late-night pizza parties...", 0),
-        #
-        ('Henry Relishes Job of Covering Owens (AP) AP - No Sharpies. No situps. No pom-pom shaking. No spikes.', 1),  #
-        ('Cricket: England whitewash England beat the West Indies by 10 wickets to seal a 4-0 series whitewash.', 0),  #
-        ('Types of Investors: Which Are You? Learn a little about yourself, and it may improve your performance.', 2),
-        #
-        ("Oracle's first monthly patch batch fails to placate critics Behind MS on security, says top bug hunter", 3),
-        #
-        ("Pixar's Waiting for Summer Plus, IBM's win-win, Eli Lilly bares all, and a ticking retirement time bomb.", 2),
-        #
-        ('BBC wants help developing open source video codec &lt;strong&gt;LinuxWorld&lt;/strong&gt; Dirac attack', 3),
-        #
-        ('Baseball Today (AP) AP - Houston at St. Louis (8:19 p.m. EDT). Game 7 of the NL championship series.', 1),  #
-        ('Poisoned. But Whodunit? The Ukrainian election takes a new twist after a stunning medical disclosure', 0),  #
-        ("The iPod's Big Brother Apple's latest computer is as cool and sleek as its best-selling music player", 2)  #
+                      test_sample = 2_000, name = "agn",
+                      llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
+                      mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
 
-    ])
+                      llm_task_prompt = "Classify the news articles. for each article label is World (0) Sports (1) Business (2) Sci/Tech (3)",
+                      llm_few_shots_prompt = [(
+                          'Bears Defeat Vikings, 24-14 (AP) AP - Hanging with Chad was a winning experience for the Chicago Bears.',
+                          1),  #
+                          (
+                              "Dual-core IBM PowerPC 'to ship in single-core form' Standalone part - or a dualie with one dud core?",
+                              3),  #
+                          (
+                              "Students Aiming to Avoid 'Freshman 15' AUSTIN - All-you-can-eat dorm dining. Late-night pizza parties...",
+                              0),  #
+                          (
+                              'Henry Relishes Job of Covering Owens (AP) AP - No Sharpies. No situps. No pom-pom shaking. No spikes.',
+                              1),  #
+                          (
+                              'Cricket: England whitewash England beat the West Indies by 10 wickets to seal a 4-0 series whitewash.',
+                              0),  #
+                          (
+                              'Types of Investors: Which Are You? Learn a little about yourself, and it may improve your performance.',
+                              2),  #
+                          (
+                              "Oracle's first monthly patch batch fails to placate critics Behind MS on security, says top bug hunter",
+                              3),  #
+                          (
+                              "Pixar's Waiting for Summer Plus, IBM's win-win, Eli Lilly bares all, and a ticking retirement time bomb.",
+                              2),  #
+                          (
+                              'BBC wants help developing open source video codec &lt;strong&gt;LinuxWorld&lt;/strong&gt; Dirac attack',
+                              3),  #
+                          (
+                              'Baseball Today (AP) AP - Houston at St. Louis (8:19 p.m. EDT). Game 7 of the NL championship series.',
+                              1),  #
+                          (
+                              'Poisoned. But Whodunit? The Ukrainian election takes a new twist after a stunning medical disclosure',
+                              0),  #
+                          (
+                              "The iPod's Big Brother Apple's latest computer is as cool and sleek as its best-selling music player",
+                              2)  #
+
+                      ])
 
 RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes", dataset_train = "train", dataset_val = "validation",
                       dataset_test = "test", dataset_column_text = "text", dataset_column_label = "label",
                       bert_fine_tuned_model = "textattack/bert-base-uncased-rotten-tomatoes",
                       roberta_fine_tuned_model = "textattack/roberta-base-rotten-tomatoes",
                       distilbert_fine_tuned_model = "textattack/distilbert-base-uncased-rotten-tomatoes",
-                      roberta_base_model = "FacebookAI/roberta-base",
-                      distilbert_base_model = "distilbert/distilbert-base-uncased",
-                      bert_base_model = "bert-base-uncased", labels_str_int_maps = dict(negative = 0, positive = 1),
-                      default_lr = 4e-5, llama_lr = 8e-5, test_sample = None, name = "rtn",
-                      llama_is_for_seq_class = False,
-                      llama_model = "/home/yonatanto/work/theza/NEEA/OTHERS/LLAMA_MODELS/meta-llama_Llama-2-7b-hf/model_tokenizer",
-                      llama_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
-                      llama_few_shots_prompt = [
+                      labels_str_int_maps = dict(negative = 0, positive = 1), test_sample = None, name = "rtm",
+                      llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
+                      mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
+
+                      llm_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
+                      llm_few_shots_prompt = [
                           ("the film desperately sinks further and further into comedy futility .",  #
                            0),  #
                           ("if you sometimes like to go to the movies to have fun , wasabi is a good place to start .",
@@ -162,14 +150,4 @@ RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes", dataset_train = "train",
                            1),  #
                           ("so exaggerated and broad that it comes off as annoying rather than charming .",  #
                            0)  #
-                      ],  #
-                      baseline_llama_few_shots_prompt = [  #
-                          ("fuller would surely have called this gutsy and at times exhilarating movie a great yarn .",
-                           1,  #
-                           ["great", "exhilarating", "gutsy"]),  #
-                          ("this movie is about the worst thing chan has done in the united states .", 0,  #
-                           ["worst"]),  #
-                          ("i admired this work a lot .	", 1,  #
-                           ["admired"]),  #
-                          ("staggers between flaccid satire and what is supposed to be madcap farce .", 0,  #
-                           ["flaccid", "farce"])])
+                      ])
