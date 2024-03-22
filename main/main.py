@@ -31,8 +31,6 @@ def summarize_attributions(attributions, sum_dim = -1):
     return attributions
 
 
-def get_folder_name(exp_name: str, metric: Enum):
-    return f"{ExpArgs.default_root_dir}/{exp_name}/metric_{metric.value}"
 
 
 class Baselines:
@@ -71,6 +69,9 @@ class Baselines:
 
             ExpArgs.labels_tokens_opt = torch.stack(labels_tokens).squeeze()[:, -1]
 
+    def get_folder_name(self, metric: Enum):
+        return f"{self.exp_path}/metric_{metric.value}"
+
     def set_ref_token(self):
         if ExpArgs.ref_token_name == RefTokenNameTypes.MASK.value:
             self.ref_token = self.tokenizer.mask_token_id
@@ -81,13 +82,14 @@ class Baselines:
 
     def run(self):
 
-        if AttrScoreFunctions.decompX.value == self.attr_score_function:
+        if self.attr_score_function == AttrScoreFunctions.decompX.value:
             sys.path.append(f"{os.getcwd()}/../../main/utils/DecompX")
             from main.utils.decompX_utils import DecomposeXBaseline
-        elif AttrScoreFunctions.alti.value == self.attr_score_function:
+        elif self.attr_score_function == AttrScoreFunctions.alti.value:
             sys.path.append(f"{os.getcwd()}/../../main/utils/alti")
             from main.utils.alti_utils import AltiBaseline
-        elif AttrScoreFunctions.alti.value == self.glob_enc:
+        elif (self.attr_score_function == AttrScoreFunctions.glob_enc) or (
+                self.attr_score_function == AttrScoreFunctions.glob_enc_dim_0):
             sys.path.append(f"{os.getcwd()}/../../main/utils/GlobEnc")
             from main.utils.globenc_utils import GlobEncBaseline
             self.glob_enc_baseline = GlobEncBaseline
@@ -97,11 +99,11 @@ class Baselines:
         # Compute attributions
 
         for metric in self.metrics:
-            result_path = get_folder_name(self.exp_path, metric)
+            result_path = self.get_folder_name(metric)
             os.makedirs(result_path, exist_ok = True)
 
-        # TODO - remove
-        for i, row in enumerate(self.data[:5]):
+        self.data = self.data[:5]  # TODO - remove
+        for i, row in enumerate(self.data):
             item_id = row[2]
             label = row[1]
             txt = row[0]
@@ -180,7 +182,7 @@ class Baselines:
             for metric in EvalMetric:
                 test_eval_tokens = EvalTokens if is_model_encoder_only() else [EvalTokens.ALL_TOKENS]
                 for eval_token in test_eval_tokens:
-                    experiment_path = get_folder_name(self.exp_path, metric)
+                    experiment_path = self.get_folder_name(metric)
                     ExpArgs.eval_metric = metric.value
                     ExpArgs.eval_tokens = eval_token.value
 
