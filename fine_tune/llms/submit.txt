@@ -9,8 +9,8 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=70g
-#SBATCH --gpus=2
+#SBATCH --mem=40g
+#SBATCH --gpus=1
 #SBATCH --nodelist=gpu8
 
 #SBATCH --no-requeue
@@ -21,4 +21,7 @@ module load anaconda3
 source activate NEEA_2
 
 ## run
-python fine_tune_llama.py
+python run.py --task emotions --is_bf16 True --is_use_prompt True
+python run.py --task emotions --is_bf16 True
+python run.py --task agn --is_bf16 True --is_use_prompt True
+python run.py --task agn --is_bf16 True

@@ -31,8 +31,6 @@ def summarize_attributions(attributions, sum_dim = -1):
     return attributions
 
 
-
-
 class Baselines:
     def __init__(self, exp_name: str, attr_score_function: str, metrics: List[EvalMetric]):
         print(f"run {attr_score_function}")
@@ -86,10 +84,10 @@ class Baselines:
             sys.path.append(f"{os.getcwd()}/../../main/utils/DecompX")
             from main.utils.decompX_utils import DecomposeXBaseline
         elif self.attr_score_function == AttrScoreFunctions.alti.value:
-            sys.path.append(f"{os.getcwd()}/../../main/utils/alti")
+            sys.path.append(f"{os.getcwd()}/../../main/utils/transformer-contributions/alti")
             from main.utils.alti_utils import AltiBaseline
-        elif (self.attr_score_function == AttrScoreFunctions.glob_enc) or (
-                self.attr_score_function == AttrScoreFunctions.glob_enc_dim_0):
+        elif (self.attr_score_function == AttrScoreFunctions.glob_enc.value) or (
+                self.attr_score_function == AttrScoreFunctions.glob_enc_dim_0.value):
             sys.path.append(f"{os.getcwd()}/../../main/utils/GlobEnc")
             from main.utils.globenc_utils import GlobEncBaseline
             self.glob_enc_baseline = GlobEncBaseline

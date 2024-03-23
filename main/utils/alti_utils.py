@@ -1,8 +1,8 @@
 import random
 
 import torch
-from alti.contributions import ModelWrapper
-from alti.utils_contributions import *
+from src.contributions import ModelWrapper
+from src.utils_contributions import *
 
 
 # based on https://github.com/mt-upc/transformer-contributions/blob/main/Text_classification.ipynb

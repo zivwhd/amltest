@@ -7,7 +7,7 @@ import torch
 from config.config import ExpArgs
 from config.constants import TEXT_PROMPT, LABEL_PROMPT
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
-from utils.utils_functions import get_device, is_model_encoder_only
+from utils.utils_functions import get_device, is_model_encoder_only, run_model
 
 
 class EvalModel:
@@ -40,12 +40,10 @@ class EvalModel:
 
                 batch = self.tokenizer([txt], truncation = True, padding = False, return_tensors = "pt").to(self.device)
 
-                if not is_model_encoder_only():
-                    cls_output_logits = self.model(input_ids = batch.input_ids.cuda()).logits[:, -1, :]
-                    new_pred = self.tokenizer.batch_decode(torch.argmax(cls_output_logits, dim = -1))[0]
-                else:
-                    cls_output_logits = self.model(input_ids = batch.input_ids.cuda()).logits
-                    new_pred = str(torch.argmax(cls_output_logits, dim = -1)[0].item())
+                logits = run_model(model = self.model, input_ids = batch.inputs_ids.cuda(),
+                                             attention_mask = batch.attention_mask.cuda(), is_return_logits = True).squeeze()
+
+                new_pred = self.tokenizer.batch_decode(torch.argmax(logits, dim = -1))[0]
                 self.preds.append(new_pred)
 
         err = sum(1 for x, y in zip(self.preds, self.labels) if x != y) / len(self.preds)

@@ -1,0 +1,14 @@
+from config.tasks import EMOTION_TASK, AGN_TASK
+
+for task in [EMOTION_TASK, AGN_TASK]:
+    for is_bf16 in [True]:
+        for is_use_prompt in [True, False]:
+            command = f"python run.py --task {task.name}"
+
+            if is_bf16:
+                command += " --is_bf16 True"
+
+            if is_use_prompt:
+                command += " --is_use_prompt True"
+
+            print(command)
