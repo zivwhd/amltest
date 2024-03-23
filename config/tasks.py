@@ -10,7 +10,7 @@ IMDB_TASK: Task = Task(dataset_name = "imdb", dataset_train = "train", dataset_v
                        is_llm_set_max_len = True, llm_explained_tokenizer_max_length = 400,
                        llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                        mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
-
+                       is_llm_use_lora = False,
                        llm_task_prompt = "Classify the sentiment of the movie review. For each sentence the label is positive (1) or negative (0)",
                        llm_few_shots_prompt = [  #
                            (
@@ -34,7 +34,9 @@ EMOTION_TASK: Task = Task(dataset_name = "emotion", dataset_train = "train", dat
                           distilbert_fine_tuned_model = "Rahmat82/DistilBERT-finetuned-on-emotion",
                           llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                           mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
-
+                          llama_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/emotions_llama/emotions_is_bf16_True_is_use_prompt_True",
+                          mistral_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/emotions_llama/emotions_is_bf16_True_is_use_prompt_True",
+                          is_llm_use_lora = True,
                           labels_str_int_maps = dict(sadness = 0, joy = 1, love = 2, anger = 3, fear = 4, surprise = 5),
                           test_sample = None, name = "emotions",
                           llm_task_prompt = "Classify the emotion expressed in each sentences. for each sentence the label is sadness (0) or joy (1) or love (2) or anger (3) or fear (4) or surprise (5)",
@@ -66,7 +68,8 @@ SST_TASK: Task = Task(dataset_name = "sst2", dataset_train = "train", dataset_va
                       distilbert_fine_tuned_model = "distilbert-base-uncased-finetuned-sst-2-english",
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
-                      labels_str_int_maps = dict(n = 0, p = 1), test_sample = None, name = "sst",
+                      is_llm_use_lora = False, labels_str_int_maps = dict(n = 0, p = 1), test_sample = None,
+                      name = "sst",
                       llm_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
                       llm_few_shots_prompt = [("hide new secretions from the parental units", 0),
                                               ("the greatest musicians", 1),  #
@@ -86,7 +89,9 @@ AGN_TASK: Task = Task(dataset_name = "ag_news", dataset_train = "train", dataset
                       test_sample = 2_000, name = "agn",
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
-
+                      llama_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/emotions_llama/agn_is_bf16_True_is_use_prompt_True",
+                      mistral_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/emotions_llama/agn_is_bf16_True_is_use_prompt_True",
+                      is_llm_use_lora = True,
                       llm_task_prompt = "Classify the news articles. for each article label is World (0) Sports (1) Business (2) Sci/Tech (3)",
                       llm_few_shots_prompt = [(
                           'Bears Defeat Vikings, 24-14 (AP) AP - Hanging with Chad was a winning experience for the Chicago Bears.',
@@ -135,7 +140,7 @@ RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes", dataset_train = "train",
                       labels_str_int_maps = dict(negative = 0, positive = 1), test_sample = None, name = "rtm",
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
-
+                      is_llm_use_lora = False,
                       llm_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
                       llm_few_shots_prompt = [
                           ("the film desperately sinks further and further into comedy futility .",  #

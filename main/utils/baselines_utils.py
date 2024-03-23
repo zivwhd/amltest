@@ -2,6 +2,7 @@ import gc
 
 import torch
 from datasets import load_dataset
+from peft import PeftModel, PeftConfig
 from pytorch_lightning import seed_everything
 from transformers import AutoTokenizer
 
@@ -48,13 +49,26 @@ def get_model():
         model_path = task.distilbert_fine_tuned_model
         model = DistilBertForSequenceClassification.from_pretrained(model_path, cache_dir = HF_CACHE)
     elif ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
-        from transformers import LlamaForCausalLM
+        from transformers import LlamaForCausalLM, LlamaForSequenceClassification
         model_path = task.llama_model
-        model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype = torch.float16, cache_dir = HF_CACHE)
+        if task.is_llm_use_lora:
+            model = LlamaForSequenceClassification.from_pretrained(model_path, torch_dtype = torch.bfloat16,
+                                                                   cache_dir = HF_CACHE)
+            config = PeftConfig.from_pretrained(task.llama_adapter)
+            model = PeftModel(model, peft_config = config, adapter_name = task.llama_adapter)
+        else:
+            model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype = torch.bfloat16, cache_dir = HF_CACHE)
     elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
-        from transformers import MistralForCausalLM
+        from transformers import MistralForCausalLM, MistralForSequenceClassification
         model_path = task.mistral_model
-        model = MistralForCausalLM.from_pretrained(model_path, torch_dtype = torch.float16, cache_dir = HF_CACHE)
+        if task.is_llm_use_lora:
+            model = MistralForSequenceClassification.from_pretrained(model_path, torch_dtype = torch.bfloat16,
+                                                                     cache_dir = HF_CACHE)
+            config = PeftConfig.from_pretrained(task.mistral_adapter)
+            model = PeftModel(model, peft_config = config, adapter_name = task.mistral_adapter)
+        else:
+            model = MistralForCausalLM.from_pretrained(model_path, torch_dtype = torch.bfloat16, cache_dir = HF_CACHE)
+
     else:
         raise ValueError("unsupported explained_model_backbone selected")
     return model, model_path

@@ -58,10 +58,10 @@ def run_model(model, input_ids: Tensor = None, attention_mask: Tensor = None, in
         logits = model_output.logits
     else:
         if inputs_embeds is not None:
-            inputs_embeds = inputs_embeds.half()
-            model_output = model(inputs_embeds = inputs_embeds).logits[:, -1, :]
+            # inputs_embeds = inputs_embeds.half()
+            model_output = model(inputs_embeds = inputs_embeds, attention_mask = attention_mask).logits[:, -1, :]
         else:
-            model_output = model(input_ids = input_ids).logits[:, -1, :]
+            model_output = model(input_ids = input_ids, attention_mask = attention_mask).logits[:, -1, :]
         logits = model_output[:, ExpArgs.labels_tokens_opt]
 
     if is_return_logits and is_return_output:

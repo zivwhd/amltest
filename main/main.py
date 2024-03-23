@@ -167,7 +167,7 @@ class Baselines:
 
             if AttrScoreFunctions.glob_enc_dim_0.value == self.attr_score_function:
                 _attr = self.run_glob_enc(txt, input_ids, attention_mask)
-                attr_scores = summarize_attributions(_attr, sum_dim = 0)
+                attr_scores = summarize_attributions(_attr.squeeze(), sum_dim = 0)
 
             if attr_scores is None:
                 raise ValueError("attr_scores score can not be none")

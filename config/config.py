@@ -16,7 +16,6 @@ class ExpArgs:
     explained_model_backbone: str = None
     validation_type = ValidationType.VAL.value
     labels_tokens_opt = None
-    llama_f16 = True
     eval_tokens = None
 
 
