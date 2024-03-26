@@ -7,7 +7,7 @@ import pickle
 from datasets import load_dataset
 from transformers import TrainingArguments, Trainer, DistilBertForSequenceClassification, DistilBertTokenizer
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-import random, os
+import random
 import numpy as np
 import torch
 

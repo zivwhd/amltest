@@ -4,7 +4,7 @@ from config.types_enums import ModelBackboneTypes
 for task in [EMOTION_TASK, AGN_TASK]:
     for backbone in [ModelBackboneTypes.LLAMA, ModelBackboneTypes.MISTRAL]:
         for is_bf16 in [True]:
-            for is_use_prompt in [True, False]:
+            for is_use_prompt in [False]:
                 command = f"python run.py --task {task.name} --backbone {backbone.value}"
 
                 if is_bf16:

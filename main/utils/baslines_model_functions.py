@@ -15,15 +15,19 @@ class ForwardModel(nn.Module):
     def forward(self, input_embed, attention_mask = None, position_embed = None, type_embed = None,
                 return_all_logits = False):
 
-        embeds = input_embed + position_embed
-        if type_embed is not None:
-            embeds += type_embed
+        if is_model_encoder_only():
+            embeds = input_embed + position_embed
+            if type_embed is not None:
+                embeds += type_embed
 
-        # Get predictions
-        embeds = getattr(self.model, self.model_name).embeddings.dropout(
-            getattr(self.model, self.model_name).embeddings.LayerNorm(embeds))
-        pred = run_model(model = self.model, inputs_embeds = embeds, attention_mask = attention_mask,
-                         is_return_logits = True)
+            # Get predictions
+            embeds = getattr(self.model, self.model_name).embeddings.dropout(
+                getattr(self.model, self.model_name).embeddings.LayerNorm(embeds))
+            pred = run_model(model = self.model, inputs_embeds = embeds, attention_mask = attention_mask,
+                             is_return_logits = True)
+        else:
+            pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
+                             is_return_logits = True).squeeze()
 
         # Return all logits or just maximum class
         if return_all_logits:
@@ -148,16 +152,18 @@ def get_inputs_encoder_only(tokenizer, model, model_name, ref_token, text, devic
 
 def get_inputs_llm(tokenizer, model, model_name, ref_token, text, device):
     ref_token_id = ref_token
-    sep_token_id = tokenizer.encode(tokenizer.special_tokens_map["eos_token"])[0]
+    # sep_token_id = tokenizer.encode(tokenizer.special_tokens_map["eos_token"])[0]
 
-    text_ids = tokenizer.encode(text, add_special_tokens = False, truncation = True,
-                                max_length = tokenizer.max_len_single_sentence, )
-    input_ids = torch.tensor((text_ids + [sep_token_id]), device = device).unsqueeze(0)  # construct input token ids
-    ref_input_ids = torch.tensor(([ref_token_id] * len(text_ids) + [sep_token_id]), device = device).unsqueeze(
+    if ExpArgs.task.is_llm_use_lora:
+        text_ids = tokenizer.encode(text, add_special_tokens = True, truncation = True)
+    else:
+        text_ids = tokenizer.encode(text, add_special_tokens = False, truncation = True)
+    input_ids = torch.tensor(text_ids, device = device).unsqueeze(0)  # construct input token ids
+    ref_input_ids = torch.tensor(([ref_token_id] * len(text_ids)), device = device).unsqueeze(
         0)  # construct reference token ids
 
-    input_embed = model.shared.weight.data[input_ids]
-    ref_input_embed = model.shared.weight.data[ref_input_ids]
+    input_embed = model.get_input_embeddings()(input_ids)
+    ref_input_embed = model.get_input_embeddings()(ref_input_ids)
 
     attention_mask = construct_attention_mask(input_ids)
 

@@ -21,4 +21,4 @@ ExpArgs.explained_model_backbone = args.explained_model_backbone
 exp_path = ExpArgs.default_root_dir
 print("*" * 20, args.task, args.explained_model_backbone, "*" * 20)
 EvalModel(output_path = exp_path).run()
-print("*" * 20, "END OF ", args.task, args.explained_model_backbone, args.attr_score_function, "*" * 20)
+print("*" * 20, "END OF ", args.task, args.explained_model_backbone, "*" * 20)

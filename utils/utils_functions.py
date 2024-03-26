@@ -4,7 +4,7 @@ from typing import Tuple
 import torch
 from torch import Tensor
 
-from config.config import ExpArgs
+from config.config import ExpArgs, BackbonesMetaData
 from config.types_enums import ModelBackboneTypes
 
 
@@ -30,6 +30,10 @@ def is_model_encoder_only(model = None):
     raise ValueError(f"unsupported model: {model}")
 
 
+def is_use_prompt():
+    return (not is_model_encoder_only()) and (not ExpArgs.task.is_llm_use_lora)
+
+
 def calculate_num_of_trainable_params(model) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -52,37 +56,30 @@ def get_current_time():
 
 
 def run_model(model, input_ids: Tensor = None, attention_mask: Tensor = None, inputs_embeds: Tensor = None,
-              is_return_logits: bool = False, is_return_output: bool = False):
+              is_return_logits: bool = False):
     if is_model_encoder_only():
         model_output = model(input_ids = input_ids, attention_mask = attention_mask, inputs_embeds = inputs_embeds)
         logits = model_output.logits
     else:
         if inputs_embeds is not None:
-            # inputs_embeds = inputs_embeds.half()
-            model_output = model(inputs_embeds = inputs_embeds, attention_mask = attention_mask).logits[:, -1, :]
+            logits = model(inputs_embeds = inputs_embeds, attention_mask = attention_mask).logits
         else:
-            model_output = model(input_ids = input_ids, attention_mask = attention_mask).logits[:, -1, :]
-        logits = model_output[:, ExpArgs.labels_tokens_opt]
+            logits = model(input_ids = input_ids, attention_mask = attention_mask).logits
 
-    if is_return_logits and is_return_output:
-        return model_output, logits
+        if not ExpArgs.task.is_llm_use_lora:
+            logits = logits[:, -1, :][:, ExpArgs.labels_tokens_opt]
 
-    elif is_return_logits:
+    if is_return_logits:
         return logits
-
-    elif is_return_output:
-        return model_output
-
     else:
-        raise ValueError(f"must choose model output option")
+        raise ValueError(f"unsupported return option")
 
 
-# works for input_ids / embeddings
 
 def merge_prompts(inputs, attention_mask, task_prompt_input_ids: Tensor = None, label_prompt_input_ids: Tensor = None,
                   task_prompt_attention_mask: Tensor = None, label_prompt_attention_mask: Tensor = None) -> Tuple[
     Tensor, Tensor]:
-    if is_model_encoder_only():
+    if not is_use_prompt():
         return inputs, attention_mask
 
     if any(item is None for item in [task_prompt_input_ids, inputs, label_prompt_input_ids]):
@@ -92,3 +89,13 @@ def merge_prompts(inputs, attention_mask, task_prompt_input_ids: Tensor = None, 
                                       dim = 1)
 
     return merged_inputs, merged_attention_mask
+
+
+def conv_to_word_embedding(model, input_ids: Tensor):
+    model_backbone = ExpArgs.explained_model_backbone
+    backbone_name = BackbonesMetaData.name[model_backbone]
+    model = getattr(model, backbone_name)
+    if is_model_encoder_only(model_backbone):
+        return model.embeddings.word_embeddings(input_ids)
+    else:
+        return model.get_input_embeddings()(input_ids)

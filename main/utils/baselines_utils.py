@@ -2,7 +2,7 @@ import gc
 
 import torch
 from datasets import load_dataset
-from peft import PeftModel, PeftConfig
+from peft import PeftModel
 from pytorch_lightning import seed_everything
 from transformers import AutoTokenizer
 
@@ -53,9 +53,11 @@ def get_model():
         model_path = task.llama_model
         if task.is_llm_use_lora:
             model = LlamaForSequenceClassification.from_pretrained(model_path, torch_dtype = torch.bfloat16,
-                                                                   cache_dir = HF_CACHE)
-            config = PeftConfig.from_pretrained(task.llama_adapter)
-            model = PeftModel(model, peft_config = config, adapter_name = task.llama_adapter)
+                                                                   cache_dir = HF_CACHE,
+                                                                   num_labels = len(task.labels_int_str_maps.keys()))
+            model = PeftModel.from_pretrained(model, task.llama_adapter)
+            model = model.merge_and_unload()
+
         else:
             model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype = torch.bfloat16, cache_dir = HF_CACHE)
     elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
@@ -63,9 +65,10 @@ def get_model():
         model_path = task.mistral_model
         if task.is_llm_use_lora:
             model = MistralForSequenceClassification.from_pretrained(model_path, torch_dtype = torch.bfloat16,
-                                                                     cache_dir = HF_CACHE)
-            config = PeftConfig.from_pretrained(task.mistral_adapter)
-            model = PeftModel(model, peft_config = config, adapter_name = task.mistral_adapter)
+                                                                     cache_dir = HF_CACHE,
+                                                                     num_labels = len(task.labels_int_str_maps.keys()))
+            model = PeftModel.from_pretrained(model, task.mistral_adapter)
+            model = model.merge_and_unload()
         else:
             model = MistralForCausalLM.from_pretrained(model_path, torch_dtype = torch.bfloat16, cache_dir = HF_CACHE)
 

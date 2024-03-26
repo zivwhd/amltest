@@ -1,4 +1,5 @@
 import os
+from functools import partial
 
 import evaluate
 import numpy as np
@@ -12,7 +13,6 @@ from config.constants import HF_CACHE, LOCAL_MODELS_PREFIX, TEXT_PROMPT, LABEL_P
 from config.types_enums import ModelBackboneTypes
 from main.utils.baselines_utils import init_baseline_exp
 from utils.dataclasses import Task
-from functools import partial
 
 metric = evaluate.load("accuracy")
 
@@ -132,4 +132,5 @@ class LlmFineTune:
             compute_metrics = compute_metrics)
 
         trainer.train()
-        self.model.save_pretrained(self.output_dir)
+
+        self.model.save_pretrained(f"{self.output_dir}/best_model", save_adapter = True, save_config = True)

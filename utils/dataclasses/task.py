@@ -9,7 +9,7 @@ class Task:
                  roberta_fine_tuned_model: str, distilbert_fine_tuned_model: str, llama_model: str,
                  mistral_model: str, is_llm_use_lora: bool, labels_str_int_maps: Union[Dict, None], test_sample: Union[int, None], name: str,
                  llm_task_prompt: str, llm_few_shots_prompt: List[Tuple[str, int]], is_llm_set_max_len = False,
-                 llama_adapter: str = None, mistral_adapter: str = None, llm_explained_tokenizer_max_length: int = -1):
+                 llama_adapter:str=None, mistral_adapter:str=None, llm_explained_tokenizer_max_length: int = -1):
         self.dataset_name = dataset_name
         self.dataset_train = dataset_train
         self.dataset_val = dataset_val

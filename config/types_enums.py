@@ -48,6 +48,7 @@ class AttrScoreFunctions(Enum):
     alti = 'alti'
     glob_enc = 'glob_enc'
     glob_enc_dim_0 = 'glob_enc_dim_0'
+    llm = "llm"
 
 
 

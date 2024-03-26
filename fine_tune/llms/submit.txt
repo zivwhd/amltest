@@ -21,12 +21,7 @@ module load anaconda3
 source activate NEEA_2
 
 ## run
-python run.py --task emotions --backbone LLAMA --is_bf16 True --is_use_prompt True
 python run.py --task emotions --backbone LLAMA --is_bf16 True
-python run.py --task emotions --backbone MISTRAL --is_bf16 True --is_use_prompt True
 python run.py --task emotions --backbone MISTRAL --is_bf16 True
-python run.py --task agn --backbone LLAMA --is_bf16 True --is_use_prompt True
 python run.py --task agn --backbone LLAMA --is_bf16 True
-python run.py --task agn --backbone MISTRAL --is_bf16 True --is_use_prompt True
 python run.py --task agn --backbone MISTRAL --is_bf16 True
-

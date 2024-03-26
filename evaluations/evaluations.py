@@ -4,7 +4,6 @@ from transformers import AutoTokenizer
 from config.config import ExpArgs, EvalMetric
 from evaluations.metrics.metrics import Metrics
 from utils.dataclasses.evaluations import DataForEval
-from utils.utils_functions import is_model_encoder_only
 
 
 def evaluate_tokens_attr(model, explained_tokenizer: AutoTokenizer, ref_token_id, data: DataForEval,

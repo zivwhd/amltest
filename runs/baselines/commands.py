@@ -6,9 +6,8 @@ for model in ModelBackboneTypes:
     tasks = [IMDB_TASK, EMOTION_TASK, SST_TASK, AGN_TASK, RTN_TASK]
     attr_scores = AttrScoreFunctions
     if not is_model_encoder_only(model.value):
-        tasks = [IMDB_TASK, SST_TASK, RTN_TASK]
         attr_scores = [AttrScoreFunctions.input_x_gradient, AttrScoreFunctions.deep_lift,
-                       AttrScoreFunctions.gradient_shap]
+                       AttrScoreFunctions.gradient_shap, AttrScoreFunctions.llm]
     for task in tasks:
         for attr_score_function in attr_scores:
             print(

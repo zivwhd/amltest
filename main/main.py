@@ -1,11 +1,11 @@
 import gc
 import os
 import sys
+from enum import Enum
 from pathlib import Path
 from typing import List
 
 from torch import Tensor
-from enum import Enum
 
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
@@ -15,9 +15,10 @@ from utils.dataclasses.evaluations import DataForEval, DataForEvalInputs
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from config.config import BackbonesMetaData, ExpArgs
-from config.constants import TEXT_PROMPT, LABEL_PROMPT
+from config.constants import TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LLM_EXP_PROMPT
 from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalTokens, EvalMetric
-from utils.utils_functions import run_model, get_device, is_model_encoder_only, merge_prompts
+from utils.utils_functions import (run_model, get_device, is_model_encoder_only, merge_prompts, conv_to_word_embedding,
+                                   is_use_prompt)
 
 import torch
 
@@ -53,15 +54,21 @@ class Baselines:
         self.set_ref_token()
         self.task_prompt_input_ids = None
         self.label_prompt_input_ids = None
+        self.task_prompt_input_ids_embeddings = None
+        self.label_prompt_input_ids_embeddings = None
         self.label_prompt_attention_mask = None
         self.task_prompt_attention_mask = None
         self.set_prompts()
 
     def set_prompts(self):
-        if not is_model_encoder_only():
+        if is_use_prompt():
             task_prompt = "\n\n".join([self.task.llm_task_prompt, self.task.llm_few_shots_prompt, TEXT_PROMPT])
             self.task_prompt_input_ids, self.task_prompt_attention_mask = self.encode(task_prompt, True)
-            self.label_prompt_input_ids, self.label_prompt_attention_mask = self.encode(LABEL_PROMPT, False)
+            self.label_prompt_input_ids, self.label_prompt_attention_mask = self.encode(LABEL_PROMPT_NEW_LINE, False)
+
+            self.task_prompt_input_ids_embeddings = conv_to_word_embedding(self.model, self.task_prompt_input_ids)
+            self.label_prompt_input_ids_embeddings = conv_to_word_embedding(self.model, self.label_prompt_input_ids)
+
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
 
@@ -75,6 +82,8 @@ class Baselines:
             self.ref_token = self.tokenizer.mask_token_id
         elif ExpArgs.ref_token_name == RefTokenNameTypes.PAD.value:
             self.ref_token = self.tokenizer.pad_token_id
+        elif ExpArgs.ref_token_name == RefTokenNameTypes.UNK.value:
+            self.ref_token = self.tokenizer.unk_token_id
         else:
             raise NotImplementedError
 
@@ -111,8 +120,8 @@ class Baselines:
                                                           text = txt, device = self.device)
             input_ids, attention_mask = self.merge_prompts_handler(input_ids, attention_mask)
             ref_input_ids, _ = self.merge_prompts_handler(ref_input_ids, attention_mask)
-            input_embed, _ = self.merge_prompts_handler(input_embed, attention_mask)
-            ref_input_embed, _ = self.merge_prompts_handler(ref_input_embed, attention_mask)
+            input_embed, _ = self.merge_prompts_embeddings__handler(input_embed, attention_mask)
+            ref_input_embed, _ = self.merge_prompts_embeddings__handler(ref_input_embed, attention_mask)
 
             with torch.no_grad():
                 pred_origin_logits = run_model(model = self.model, input_ids = input_ids,
@@ -169,16 +178,45 @@ class Baselines:
                 _attr = self.run_glob_enc(txt, input_ids, attention_mask)
                 attr_scores = summarize_attributions(_attr.squeeze(), sum_dim = 0)
 
+            if AttrScoreFunctions.llm.value == self.attr_score_function:
+                try:
+                    with torch.no_grad():
+                        prompt = "\n\n".join([LLM_EXP_PROMPT, txt, "keywords:"])
+                        prompt_input = self.tokenizer.encode(prompt, return_tensors = "pt")
+                        out = self.model.generate(prompt_input.cuda(), top_p = 0.0, temperature = 1e-10,
+                                                  max_new_tokens = len(txt.split()))
+                        out = out[:, prompt_input.shape[-1]:]
+                        keywords = self.tokenizer.batch_decode(out)
+                        keywords = [i[2:] for i in keywords[0].split("\n") if i.startswith("- ")]
+
+                        input_input_ids_squeezed = input_ids.squeeze()
+                        attr_score = torch.zeros_like(input_ids.squeeze())
+                        print(keywords, flush = True)
+                        for k in keywords:
+                            for token in self.tokenizer.encode(k, add_special_tokens = False):
+                                indices = torch.nonzero(torch.eq(input_input_ids_squeezed, token)).squeeze()
+                                attr_score[indices] = 1
+                        attr_scores = attr_score
+                except Exception as e:
+                    print("ERR", flush = True)
+                    attr_scores = torch.zeros_like(input_ids.squeeze())
+
             if attr_scores is None:
                 raise ValueError("attr_scores score can not be none")
 
             eval_attr_score = attr_scores
-            if not is_model_encoder_only():
+            if is_use_prompt():
                 eval_attr_score = attr_scores[
                                   self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[-1]].detach()
 
             for metric in EvalMetric:
-                test_eval_tokens = EvalTokens if is_model_encoder_only() else [EvalTokens.ALL_TOKENS]
+                if is_model_encoder_only():
+                    test_eval_tokens = EvalTokens
+                elif is_use_prompt():
+                    test_eval_tokens = [EvalTokens.ALL_TOKENS]
+                else:
+                    test_eval_tokens = [EvalTokens.ALL_TOKENS, EvalTokens.NO_SPECIAL_TOKENS]
+
                 for eval_token in test_eval_tokens:
                     experiment_path = self.get_folder_name(metric)
                     ExpArgs.eval_metric = metric.value
@@ -221,6 +259,13 @@ class Baselines:
         return merge_prompts(inputs = input_ids, attention_mask = attention_mask,
                              task_prompt_input_ids = self.task_prompt_input_ids,
                              label_prompt_input_ids = self.label_prompt_input_ids,
+                             task_prompt_attention_mask = self.task_prompt_attention_mask,
+                             label_prompt_attention_mask = self.label_prompt_attention_mask)
+
+    def merge_prompts_embeddings__handler(self, input_ids: Tensor, attention_mask: Tensor):
+        return merge_prompts(inputs = input_ids, attention_mask = attention_mask,
+                             task_prompt_input_ids = self.task_prompt_input_ids_embeddings,
+                             label_prompt_input_ids = self.label_prompt_input_ids_embeddings,
                              task_prompt_attention_mask = self.task_prompt_attention_mask,
                              label_prompt_attention_mask = self.task_prompt_attention_mask)
 

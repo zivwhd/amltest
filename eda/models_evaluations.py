@@ -5,9 +5,9 @@ import pandas as pd
 import torch
 
 from config.config import ExpArgs
-from config.constants import TEXT_PROMPT, LABEL_PROMPT
+from config.constants import TEXT_PROMPT, LABEL_PROMPT_NEW_LINE
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
-from utils.utils_functions import get_device, is_model_encoder_only, run_model
+from utils.utils_functions import get_device, is_model_encoder_only, merge_prompts, is_use_prompt
 
 
 class EvalModel:
@@ -27,9 +27,10 @@ class EvalModel:
         self.preds: List[int] = []
         self.labels: List[int] = []
 
-        labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
-                         list(ExpArgs.task.labels_int_str_maps.keys())]
-        ExpArgs.labels_tokens_opt = torch.stack(labels_tokens).squeeze()[:, -1]
+        if is_use_prompt():
+            labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
+                             list(ExpArgs.task.labels_int_str_maps.keys())]
+            ExpArgs.labels_tokens_opt = torch.stack(labels_tokens).squeeze()[:, -1]
 
     def run(self):
         with torch.no_grad():
@@ -38,38 +39,47 @@ class EvalModel:
                 label = row[1]
                 txt = row[0]
                 self.labels += [str(label)]
-                if not is_model_encoder_only():
-                    if self.task.is_llm_use_lora:
-                        txt = "\n\n".join([self.task.llm_task_prompt, "\n".join([TEXT_PROMPT + txt, LABEL_PROMPT])])
-                    else:
-                        txt = "\n\n".join([self.task.llm_task_prompt, self.task.llm_few_shots_prompt,
-                                           "\n".join([TEXT_PROMPT + txt, LABEL_PROMPT])])
 
-                batch = self.tokenizer([txt], truncation = True, padding = False, return_tensors = "pt").to(self.device)
+                tokenized_input = self.tokenizer.encode_plus(txt,
+                                                             truncation = True, padding = False,
+                                                             return_tensors = "pt",
+                                                             add_special_tokens = not is_use_prompt()).to(self.device)
+                input_ids = tokenized_input.input_ids
+                attention_mask = tokenized_input.attention_mask
 
-                input_ids = batch.input_ids.cuda()
-                attention_mask = batch.attention_mask.cuda()
-                if is_model_encoder_only():
-                    logits = self.model(input_ids = input_ids, attention_mask = attention_mask).logits
+                if is_use_prompt():
+                    task_prompt = "\n\n".join(
+                        [self.task.llm_task_prompt, self.task.llm_few_shots_prompt, "\n".join([TEXT_PROMPT])])
+                    tokenized_task_prompt = self.tokenizer.encode_plus(task_prompt, padding = False,
+                                                                       return_tensors = "pt",
+                                                                       add_special_tokens = True).to(self.device)
+                    tokenized_label = self.tokenizer.encode_plus(LABEL_PROMPT_NEW_LINE, padding = False,
+                                                                 return_tensors = "pt", add_special_tokens = False).to(
+                        self.device)
+                    input_ids, attention_mask = merge_prompts(  #
+                        inputs = input_ids, attention_mask = attention_mask,
+                        task_prompt_input_ids = tokenized_task_prompt.input_ids,
+                        label_prompt_input_ids = tokenized_label.input_ids,
+                        task_prompt_attention_mask = tokenized_task_prompt.attention_mask,
+                        label_prompt_attention_mask = tokenized_label.attention_mask)
+
+                if is_model_encoder_only() or self.task.is_llm_use_lora:
+                    logits = self.model(input_ids = input_ids, attention_mask = attention_mask).logits.squeeze()
                     self.preds.append(str(torch.argmax(logits, dim = -1).squeeze().item()))
                 else:
-                    if self.task.is_llm_use_lora:
-                        logits = self.model(input_ids = input_ids, attention_mask = attention_mask).logits.squeeze()
-                        self.preds.append(str(torch.argmax(logits, dim = -1).squeeze().item()))
-                    else:
-                        logits = self.model(input_ids = input_ids, attention_mask = attention_mask).logits[:, -1, :]
-                        mask = torch.ones_like(logits, dtype = torch.bool)
-                        mask[:, ExpArgs.labels_tokens_opt] = False
-                        logits[mask] = float('-inf')
+                    logits = self.model(input_ids = input_ids, attention_mask = attention_mask).logits[:, -1, :]
+                    mask = torch.ones_like(logits, dtype = torch.bool)
+                    mask[:, ExpArgs.labels_tokens_opt] = False
+                    logits[mask] = float('-inf')
 
-                        new_pred = self.tokenizer.batch_decode(torch.argmax(logits, dim = -1))[0]
-                        self.preds.append(new_pred)
+                    new_pred = self.tokenizer.batch_decode(torch.argmax(logits, dim = -1))[0]
+                    self.preds.append(new_pred)
 
         err = sum(1 for x, y in zip(self.preds, self.labels) if x != y) / len(self.preds)
         acc = 1 - err
         df = pd.DataFrame(dict(  #
             model = [ExpArgs.explained_model_backbone],  #
-            task = self.task.name, #
+            task = self.task.name,  #
             metric = ["Accuracy"],  #
             pred = [self.preds],  #
             labels = [self.labels],  #

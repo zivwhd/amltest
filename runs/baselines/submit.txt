@@ -30,6 +30,7 @@ python run_baselines.py imdb decompX BERT all
 python run_baselines.py imdb alti BERT all
 python run_baselines.py imdb glob_enc BERT all
 python run_baselines.py imdb glob_enc_dim_0 BERT all
+python run_baselines.py imdb llm BERT all
 python run_baselines.py emotions deep_lift BERT all
 python run_baselines.py emotions gradient_shap BERT all
 python run_baselines.py emotions input_x_gradient BERT all
@@ -39,6 +40,7 @@ python run_baselines.py emotions decompX BERT all
 python run_baselines.py emotions alti BERT all
 python run_baselines.py emotions glob_enc BERT all
 python run_baselines.py emotions glob_enc_dim_0 BERT all
+python run_baselines.py emotions llm BERT all
 python run_baselines.py sst deep_lift BERT all
 python run_baselines.py sst gradient_shap BERT all
 python run_baselines.py sst input_x_gradient BERT all
@@ -48,6 +50,7 @@ python run_baselines.py sst decompX BERT all
 python run_baselines.py sst alti BERT all
 python run_baselines.py sst glob_enc BERT all
 python run_baselines.py sst glob_enc_dim_0 BERT all
+python run_baselines.py sst llm BERT all
 python run_baselines.py agn deep_lift BERT all
 python run_baselines.py agn gradient_shap BERT all
 python run_baselines.py agn input_x_gradient BERT all
@@ -57,6 +60,7 @@ python run_baselines.py agn decompX BERT all
 python run_baselines.py agn alti BERT all
 python run_baselines.py agn glob_enc BERT all
 python run_baselines.py agn glob_enc_dim_0 BERT all
+python run_baselines.py agn llm BERT all
 python run_baselines.py rtm deep_lift BERT all
 python run_baselines.py rtm gradient_shap BERT all
 python run_baselines.py rtm input_x_gradient BERT all
@@ -66,6 +70,7 @@ python run_baselines.py rtm decompX BERT all
 python run_baselines.py rtm alti BERT all
 python run_baselines.py rtm glob_enc BERT all
 python run_baselines.py rtm glob_enc_dim_0 BERT all
+python run_baselines.py rtm llm BERT all
 python run_baselines.py imdb deep_lift ROBERTA all
 python run_baselines.py imdb gradient_shap ROBERTA all
 python run_baselines.py imdb input_x_gradient ROBERTA all
@@ -75,6 +80,7 @@ python run_baselines.py imdb decompX ROBERTA all
 python run_baselines.py imdb alti ROBERTA all
 python run_baselines.py imdb glob_enc ROBERTA all
 python run_baselines.py imdb glob_enc_dim_0 ROBERTA all
+python run_baselines.py imdb llm ROBERTA all
 python run_baselines.py emotions deep_lift ROBERTA all
 python run_baselines.py emotions gradient_shap ROBERTA all
 python run_baselines.py emotions input_x_gradient ROBERTA all
@@ -84,6 +90,7 @@ python run_baselines.py emotions decompX ROBERTA all
 python run_baselines.py emotions alti ROBERTA all
 python run_baselines.py emotions glob_enc ROBERTA all
 python run_baselines.py emotions glob_enc_dim_0 ROBERTA all
+python run_baselines.py emotions llm ROBERTA all
 python run_baselines.py sst deep_lift ROBERTA all
 python run_baselines.py sst gradient_shap ROBERTA all
 python run_baselines.py sst input_x_gradient ROBERTA all
@@ -93,6 +100,7 @@ python run_baselines.py sst decompX ROBERTA all
 python run_baselines.py sst alti ROBERTA all
 python run_baselines.py sst glob_enc ROBERTA all
 python run_baselines.py sst glob_enc_dim_0 ROBERTA all
+python run_baselines.py sst llm ROBERTA all
 python run_baselines.py agn deep_lift ROBERTA all
 python run_baselines.py agn gradient_shap ROBERTA all
 python run_baselines.py agn input_x_gradient ROBERTA all
@@ -102,6 +110,7 @@ python run_baselines.py agn decompX ROBERTA all
 python run_baselines.py agn alti ROBERTA all
 python run_baselines.py agn glob_enc ROBERTA all
 python run_baselines.py agn glob_enc_dim_0 ROBERTA all
+python run_baselines.py agn llm ROBERTA all
 python run_baselines.py rtm deep_lift ROBERTA all
 python run_baselines.py rtm gradient_shap ROBERTA all
 python run_baselines.py rtm input_x_gradient ROBERTA all
@@ -111,6 +120,7 @@ python run_baselines.py rtm decompX ROBERTA all
 python run_baselines.py rtm alti ROBERTA all
 python run_baselines.py rtm glob_enc ROBERTA all
 python run_baselines.py rtm glob_enc_dim_0 ROBERTA all
+python run_baselines.py rtm llm ROBERTA all
 python run_baselines.py imdb deep_lift DISTILBERT all
 python run_baselines.py imdb gradient_shap DISTILBERT all
 python run_baselines.py imdb input_x_gradient DISTILBERT all
@@ -120,6 +130,7 @@ python run_baselines.py imdb decompX DISTILBERT all
 python run_baselines.py imdb alti DISTILBERT all
 python run_baselines.py imdb glob_enc DISTILBERT all
 python run_baselines.py imdb glob_enc_dim_0 DISTILBERT all
+python run_baselines.py imdb llm DISTILBERT all
 python run_baselines.py emotions deep_lift DISTILBERT all
 python run_baselines.py emotions gradient_shap DISTILBERT all
 python run_baselines.py emotions input_x_gradient DISTILBERT all
@@ -129,6 +140,7 @@ python run_baselines.py emotions decompX DISTILBERT all
 python run_baselines.py emotions alti DISTILBERT all
 python run_baselines.py emotions glob_enc DISTILBERT all
 python run_baselines.py emotions glob_enc_dim_0 DISTILBERT all
+python run_baselines.py emotions llm DISTILBERT all
 python run_baselines.py sst deep_lift DISTILBERT all
 python run_baselines.py sst gradient_shap DISTILBERT all
 python run_baselines.py sst input_x_gradient DISTILBERT all
@@ -138,6 +150,7 @@ python run_baselines.py sst decompX DISTILBERT all
 python run_baselines.py sst alti DISTILBERT all
 python run_baselines.py sst glob_enc DISTILBERT all
 python run_baselines.py sst glob_enc_dim_0 DISTILBERT all
+python run_baselines.py sst llm DISTILBERT all
 python run_baselines.py agn deep_lift DISTILBERT all
 python run_baselines.py agn gradient_shap DISTILBERT all
 python run_baselines.py agn input_x_gradient DISTILBERT all
@@ -147,6 +160,7 @@ python run_baselines.py agn decompX DISTILBERT all
 python run_baselines.py agn alti DISTILBERT all
 python run_baselines.py agn glob_enc DISTILBERT all
 python run_baselines.py agn glob_enc_dim_0 DISTILBERT all
+python run_baselines.py agn llm DISTILBERT all
 python run_baselines.py rtm deep_lift DISTILBERT all
 python run_baselines.py rtm gradient_shap DISTILBERT all
 python run_baselines.py rtm input_x_gradient DISTILBERT all
@@ -156,21 +170,44 @@ python run_baselines.py rtm decompX DISTILBERT all
 python run_baselines.py rtm alti DISTILBERT all
 python run_baselines.py rtm glob_enc DISTILBERT all
 python run_baselines.py rtm glob_enc_dim_0 DISTILBERT all
+python run_baselines.py rtm llm DISTILBERT all
 python run_baselines.py imdb input_x_gradient LLAMA all
 python run_baselines.py imdb deep_lift LLAMA all
 python run_baselines.py imdb gradient_shap LLAMA all
+python run_baselines.py imdb llm LLAMA all
+python run_baselines.py emotions input_x_gradient LLAMA all
+python run_baselines.py emotions deep_lift LLAMA all
+python run_baselines.py emotions gradient_shap LLAMA all
+python run_baselines.py emotions llm LLAMA all
 python run_baselines.py sst input_x_gradient LLAMA all
 python run_baselines.py sst deep_lift LLAMA all
 python run_baselines.py sst gradient_shap LLAMA all
+python run_baselines.py sst llm LLAMA all
+python run_baselines.py agn input_x_gradient LLAMA all
+python run_baselines.py agn deep_lift LLAMA all
+python run_baselines.py agn gradient_shap LLAMA all
+python run_baselines.py agn llm LLAMA all
 python run_baselines.py rtm input_x_gradient LLAMA all
 python run_baselines.py rtm deep_lift LLAMA all
 python run_baselines.py rtm gradient_shap LLAMA all
+python run_baselines.py rtm llm LLAMA all
 python run_baselines.py imdb input_x_gradient MISTRAL all
 python run_baselines.py imdb deep_lift MISTRAL all
 python run_baselines.py imdb gradient_shap MISTRAL all
+python run_baselines.py imdb llm MISTRAL all
+python run_baselines.py emotions input_x_gradient MISTRAL all
+python run_baselines.py emotions deep_lift MISTRAL all
+python run_baselines.py emotions gradient_shap MISTRAL all
+python run_baselines.py emotions llm MISTRAL all
 python run_baselines.py sst input_x_gradient MISTRAL all
 python run_baselines.py sst deep_lift MISTRAL all
 python run_baselines.py sst gradient_shap MISTRAL all
+python run_baselines.py sst llm MISTRAL all
+python run_baselines.py agn input_x_gradient MISTRAL all
+python run_baselines.py agn deep_lift MISTRAL all
+python run_baselines.py agn gradient_shap MISTRAL all
+python run_baselines.py agn llm MISTRAL all
 python run_baselines.py rtm input_x_gradient MISTRAL all
 python run_baselines.py rtm deep_lift MISTRAL all
 python run_baselines.py rtm gradient_shap MISTRAL all
+python run_baselines.py rtm llm MISTRAL all

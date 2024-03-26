@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List
 
-import numpy as np
 import pandas as pd
 import torch
 from transformers import AutoTokenizer
@@ -9,8 +8,8 @@ from transformers import AutoTokenizer
 from config.config import ExpArgs, MetricsMetaData
 from config.types_enums import EvalMetric
 from evaluations.metrics.metrics_utils import MetricsFunctions
-from utils.dataclasses.metric_results import MetricResults
 from utils.dataclasses.evaluations import DataForEval
+from utils.dataclasses.metric_results import MetricResults
 from utils.utils_functions import get_device
 
 

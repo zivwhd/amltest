@@ -128,6 +128,8 @@ class MetricsFunctions:
                 tokens_attr[0] = val  # cls
                 n_attr = n_attr - 1  # cls
                 required_tokens = torch.tensor([0])  # cls
+            else:
+                raise ValueError("unsupported EvalTokens.NO_CLS.value for not encoders only models")
             return tokens_attr, n_attr, required_tokens
         elif ExpArgs.eval_tokens == EvalTokens.NO_SPECIAL_TOKENS.value:
             indices = torch.isin(input_ids, self.special_tokens)
