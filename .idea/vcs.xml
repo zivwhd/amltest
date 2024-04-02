@@ -4,6 +4,7 @@
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/main/utils/DecompX" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/main/utils/GlobEnc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/main/utils/solvability-explainer" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/main/utils/transformer-contributions" vcs="Git" />
   </component>
 </project>

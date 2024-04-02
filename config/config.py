@@ -30,8 +30,8 @@ class MetricsMetaData:
                   EvalMetric.AOPC_COMPREHENSIVENESS.value: DirectionTypes.MAX.value}
 
     top_k = {EvalMetric.SUFFICIENCY.value: [20], EvalMetric.COMPREHENSIVENESS.value: [20],
-             EvalMetric.EVAL_LOG_ODDS.value: [20], EvalMetric.AOPC_SUFFICIENCY.value: torch.arange(20, 100, 20).tolist(),
-             EvalMetric.AOPC_COMPREHENSIVENESS.value: torch.arange(20, 100, 20).tolist()}
+             EvalMetric.EVAL_LOG_ODDS.value: [20], EvalMetric.AOPC_SUFFICIENCY.value: [1, 5, 10, 20, 50],
+             EvalMetric.AOPC_COMPREHENSIVENESS.value: [1, 5, 10, 20, 50]}
 
 
 class BackbonesMetaData:

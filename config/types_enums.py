@@ -38,9 +38,11 @@ class ModelPromptType(Enum):
     FEW_SHOT = 'few_shot'
     FEW_SHOT_CONTENT = 'few_shot_content'  # few-shot but map just content
 
+
 class AttrScoreFunctions(Enum):
     deep_lift = 'deep_lift'
     gradient_shap = 'gradient_shap'
+    lime = 'lime'
     input_x_gradient = 'input_x_gradient'
     integrated_gradients = 'integrated_gradients'
     sequential_integrated_gradients = 'sequential_integrated_gradients'
@@ -49,7 +51,7 @@ class AttrScoreFunctions(Enum):
     glob_enc = 'glob_enc'
     glob_enc_dim_0 = 'glob_enc_dim_0'
     llm = "llm"
-
+    solvability = "solvability"
 
 
 class EvalTokens(Enum):

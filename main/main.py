@@ -5,6 +5,8 @@ from enum import Enum
 from pathlib import Path
 from typing import List
 
+# import lime
+# import lime.lime_text
 from torch import Tensor
 
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
@@ -22,7 +24,7 @@ from utils.utils_functions import (run_model, get_device, is_model_encoder_only,
 
 import torch
 
-from captum.attr import (DeepLift, GradientShap, InputXGradient, IntegratedGradients, )
+from captum.attr import (DeepLift, GradientShap, InputXGradient, IntegratedGradients, Lime)
 from evaluations.evaluations import evaluate_tokens_attr
 
 
@@ -100,6 +102,12 @@ class Baselines:
             sys.path.append(f"{os.getcwd()}/../../main/utils/GlobEnc")
             from main.utils.globenc_utils import GlobEncBaseline
             self.glob_enc_baseline = GlobEncBaseline
+        elif self.attr_score_function == AttrScoreFunctions.solvability.value:
+            sys.path.append(f"{os.getcwd()}/../../main/utils/solvability-explainer")
+            if not is_model_encoder_only():
+                self.tokenizer.pad_token_id = self.tokenizer.unk_token_id
+                self.tokenizer.padding_side = "left"
+            from solvex import BeamSearchExplainer, TextWordMasker
 
         # Prepare forward model
         nn_forward_func = ForwardModel(model = self.model, model_name = self.model_name)
@@ -109,7 +117,6 @@ class Baselines:
             result_path = self.get_folder_name(metric)
             os.makedirs(result_path, exist_ok = True)
 
-        self.data = self.data[:5]  # TODO - remove
         for i, row in enumerate(self.data):
             item_id = row[2]
             label = row[1]
@@ -142,6 +149,11 @@ class Baselines:
                 _attr = explainer.attribute(input_embed, baselines = torch.cat([ref_input_embed, input_embed]),
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
+
+            if AttrScoreFunctions.lime.value == self.attr_score_function:
+                explainer = Lime(self.lime_func)
+                _attr = explainer.attribute(input_ids)
+                attr_scores = _attr.squeeze().detach()
 
             if AttrScoreFunctions.input_x_gradient.value == self.attr_score_function:
                 explainer = InputXGradient(nn_forward_func)
@@ -178,6 +190,27 @@ class Baselines:
                 _attr = self.run_glob_enc(txt, input_ids, attention_mask)
                 attr_scores = summarize_attributions(_attr.squeeze(), sum_dim = 0)
 
+            if AttrScoreFunctions.solvability.value == self.attr_score_function:
+                # sentence = self.tokenizer.tokenize(txt, add_special_tokens = True)
+                sentence = [self.tokenizer.convert_ids_to_tokens(i) for i in input_ids.squeeze().tolist()]
+                masker = TextWordMasker(suppression = 'remove')
+                if len(self.metrics) != 1:
+                    raise ValueError("Err")
+                if self.metrics[0].value in [EvalMetric.COMPREHENSIVENESS.value,
+                                             EvalMetric.AOPC_COMPREHENSIVENESS.value]:
+                    metric = 'comp'
+                elif self.metrics[0].value in [EvalMetric.SUFFICIENCY.value, EvalMetric.AOPC_SUFFICIENCY.value, ]:
+                    metric = 'suff'
+                elif self.metrics[0].value in [EvalMetric.EVAL_LOG_ODDS.value]:
+                    metric = 'suff'  # metric = 'comp-suff'
+                else:
+                    raise ValueError("Err")
+
+                explainer = BeamSearchExplainer(masker, f = self.solvability_func, beam_size = 50, batch_size = 50,
+                                                metric = metric)
+                e = explainer.explain_instance(sentence, label = model_pred_origin.squeeze().item())
+                attr_scores = torch.tensor(e["exp"])
+
             if AttrScoreFunctions.llm.value == self.attr_score_function:
                 try:
                     with torch.no_grad():
@@ -209,7 +242,7 @@ class Baselines:
                 eval_attr_score = attr_scores[
                                   self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[-1]].detach()
 
-            for metric in EvalMetric:
+            for metric in self.metrics:
                 if is_model_encoder_only():
                     test_eval_tokens = EvalTokens
                 elif is_use_prompt():
@@ -275,3 +308,22 @@ class Baselines:
         _attr = self.glob_enc.compute_attr(txt, input_ids, attention_mask)
         _attr = torch.tensor(_attr)
         return _attr
+
+    def solvability_func(self, sentences):
+        sentences = [' '.join(s) for s in sentences]
+        tok = self.tokenizer(sentences, return_tensors = 'pt', padding = True, add_special_tokens = False).to(
+            self.device)
+        with torch.no_grad():
+            # logits = self.model(**tok)['logits']
+            logits = run_model(model = self.model, input_ids = tok.input_ids, attention_mask = tok.attention_mask,
+                               is_return_logits = True)
+
+        probs = torch.nn.functional.softmax(logits, dim = -1).cpu().numpy()
+        return probs
+
+    def lime_func(self, sentences):
+        with torch.no_grad():
+            logits = run_model(model = self.model, input_ids = sentences, is_return_logits = True)
+
+        probs = torch.nn.functional.softmax(logits, dim = -1).squeeze().cpu().numpy()
+        return probs
