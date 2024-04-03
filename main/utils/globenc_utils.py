@@ -36,10 +36,10 @@ class GlobEncBaseline:
                                                    output_attentions=True, output_norms=True, return_dict=False)
             num_layers = len(attentions)
             norm_nenc = torch.stack([norms[i][4] for i in range(num_layers)]).squeeze().cpu().numpy()
-            print("Single layer N-Enc token attribution:", norm_nenc.shape)
+            # print("Single layer N-Enc token attribution:", norm_nenc.shape)
 
             # Aggregate and compute GlobEnc
             globenc = AttentionRollout().compute_flows([norm_nenc], output_hidden_states=False)[0]
             globenc = np.array(globenc)
-            print("Aggregated N-Enc token attribution (GlobEnc):", globenc.shape)
+            # print("Aggregated N-Enc token attribution (GlobEnc):", globenc.shape)
             return globenc

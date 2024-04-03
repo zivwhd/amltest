@@ -14,3 +14,4 @@ class MetricResults:
     model_pred_origin: Union[int, None]
     gt_target: Union[int, None]
     eval_tokens: str
+    attr_score_unction: str

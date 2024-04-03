@@ -78,6 +78,7 @@ class Metrics:
         res = MetricResults(item_index = self.item_index, task = ExpArgs.task.name, eval_metric = ExpArgs.eval_metric,
                             explained_model_backbone = ExpArgs.explained_model_backbone, metric_result = metric_result,
                             metric_steps_result = None, steps_k = self.pretu_steps,
+                            attr_score_unction = ExpArgs.attr_score_function,
                             model_pred_origin = self.data.pred_origin.squeeze().item(), gt_target = gt_target,
                             eval_tokens = ExpArgs.eval_tokens)
         return pd.DataFrame([res])

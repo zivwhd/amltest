@@ -27,7 +27,7 @@ class ForwardModel(nn.Module):
                              is_return_logits = True)
         else:
             pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
-                             is_return_logits = True).squeeze()
+                             is_return_logits = True)
 
         # Return all logits or just maximum class
         if return_all_logits:

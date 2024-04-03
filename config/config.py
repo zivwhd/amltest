@@ -14,6 +14,7 @@ class ExpArgs:
     is_save_results = True
     task: Task = None
     explained_model_backbone: str = None
+    attr_score_function: str = None
     validation_type = ValidationType.VAL.value
     labels_tokens_opt = None
     eval_tokens = None
