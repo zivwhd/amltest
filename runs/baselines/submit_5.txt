@@ -1,0 +1,32 @@
+#!/bin/bash
+
+## resource allocation
+#SBATCH --job-name=BL_1_
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
+
+#SBATCH --qos=gpu
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=30g
+#SBATCH --gpus=1
+#SBATCH --nodelist=gpu7
+
+#SBATCH --no-requeue
+
+
+## modules and apps
+module load anaconda3
+source activate NEEA_2
+
+## run
+python run_baselines.py emotions solvability BERT EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py emotions solvability ROBERTA EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py emotions solvability DISTILBERT EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py sst solvability BERT EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py sst solvability ROBERTA EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py sst solvability DISTILBERT EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py rtm solvability BERT EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py rtm solvability ROBERTA EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py rtm solvability DISTILBERT EvalMetric.EVAL_LOG_ODDS

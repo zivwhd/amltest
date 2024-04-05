@@ -79,7 +79,11 @@ def get_model():
 
 def get_tokenizer(model_path: str):
     task = ExpArgs.task
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+    if is_model_encoder_only():
+        tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir = HF_CACHE)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir = HF_CACHE, padding_side = 'left')
 
     # SET MAX LENGTH
     if task.is_llm_set_max_len and (not is_model_encoder_only()):

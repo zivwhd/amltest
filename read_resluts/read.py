@@ -11,4 +11,6 @@ def reaad_file(f):
 
 df = pd.concat([reaad_file(f) for f in files])
 
-df.groupby(['task', 'folder', "explained_model_backbone", 'eval_tokens', 'eval_metric'])["metric_result"].mean().to_csv("./results.csv")
+x = df.groupby(['task', 'folder', "explained_model_backbone", 'eval_tokens', 'eval_metric']).aggregate({"metric_result": ["mean", "count"]}).reset_index()
+y = x[(x["task"]=="emotions") & (x["explained_model_backbone"]=="BERT")]
+z = y[y["eval_metric"]=="COMPREHENSIVENESS"]

@@ -87,6 +87,10 @@ class Baselines:
         else:
             raise NotImplementedError
 
+        if not is_model_encoder_only():
+            self.tokenizer.pad_token_id = self.ref_token
+            self.model.config.pad_token_id = self.ref_token
+
     def run(self):
 
         if ExpArgs.attr_score_function == AttrScoreFunctions.decompX.value:
@@ -115,7 +119,7 @@ class Baselines:
             result_path = self.get_folder_name(metric)
             os.makedirs(result_path, exist_ok = True)
 
-        for i, row in enumerate(self.data[:5]):
+        for i, row in enumerate(self.data):
             item_id = row[2]
             label = row[1]
             txt = row[0]
@@ -191,19 +195,23 @@ class Baselines:
             if AttrScoreFunctions.solvability.value == ExpArgs.attr_score_function:
                 # sentence = self.tokenizer.tokenize(txt, add_special_tokens = True)
                 sentence = [self.tokenizer.convert_ids_to_tokens(i) for i in input_ids.squeeze().tolist()]
-                masker = TextWordMasker(suppression = 'remove')
+
                 if len(self.metrics) != 1:
                     raise ValueError("Err")
                 if self.metrics[0].value in [EvalMetric.COMPREHENSIVENESS.value,
                                              EvalMetric.AOPC_COMPREHENSIVENESS.value]:
                     metric = 'comp'
+                    suppression = 'remove'
                 elif self.metrics[0].value in [EvalMetric.SUFFICIENCY.value, EvalMetric.AOPC_SUFFICIENCY.value, ]:
                     metric = 'suff'
+                    suppression = 'remove'
                 elif self.metrics[0].value in [EvalMetric.EVAL_LOG_ODDS.value]:
                     metric = 'suff'  # metric = 'comp-suff'
+                    suppression = f'replace-{self.tokenizer.convert_ids_to_tokens(self.ref_token)}'
                 else:
                     raise ValueError("Err")
 
+                masker = TextWordMasker(suppression = suppression)
                 explainer = BeamSearchExplainer(masker, f = self.solvability_func, beam_size = 50, batch_size = 50,
                                                 metric = metric)
                 e = explainer.explain_instance(sentence, label = model_pred_origin.squeeze().item())
