@@ -21,12 +21,12 @@ module load anaconda3
 source activate NEEA_2
 
 ## run
-python run_baselines.py emotions solvability BERT EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py emotions solvability ROBERTA EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py emotions solvability DISTILBERT EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py sst solvability BERT EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py sst solvability ROBERTA EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py sst solvability DISTILBERT EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py rtm solvability BERT EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py rtm solvability ROBERTA EvalMetric.EVAL_LOG_ODDS
-python run_baselines.py rtm solvability DISTILBERT EvalMetric.EVAL_LOG_ODDS
+python run_baselines.py emotions solvability BERT EVAL_LOG_ODDS
+python run_baselines.py emotions solvability ROBERTA EVAL_LOG_ODDS
+python run_baselines.py emotions solvability DISTILBERT EVAL_LOG_ODDS
+python run_baselines.py sst solvability BERT EVAL_LOG_ODDS
+python run_baselines.py sst solvability ROBERTA EVAL_LOG_ODDS
+python run_baselines.py sst solvability DISTILBERT EVAL_LOG_ODDS
+python run_baselines.py rtm solvability BERT EVAL_LOG_ODDS
+python run_baselines.py rtm solvability ROBERTA EVAL_LOG_ODDS
+python run_baselines.py rtm solvability DISTILBERT EVAL_LOG_ODDS
