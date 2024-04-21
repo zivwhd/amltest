@@ -317,6 +317,8 @@ class Baselines:
 
     def solvability_func(self, sentences):
         sentences = [' '.join(s) for s in sentences]
+        default_val = self.tokenizer.cls_token if is_model_encoder_only() else self.tokenizer.eos_token
+        sentences = [default_val if not sent else sent for sent in sentences]
         tok = self.tokenizer(sentences, return_tensors = 'pt', padding = True, add_special_tokens = False).to(
             self.device)
         with torch.no_grad():

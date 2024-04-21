@@ -40,6 +40,7 @@ def read_paml():
 
 aml = read_aml()
 all_df = pd.concat([read_baselines(), read_rpi(), read_aml(), read_paml()])  #
+all_df["task"].replace({"rtm": "rtn"}, inplace = True)
 x = all_df.groupby(
     ['task', 'folder', "explained_model_backbone", 'eval_tokens', 'eval_metric', 'attr_score_unction']).aggregate(
     {"metric_result": ["mean", "count"]}).reset_index()
