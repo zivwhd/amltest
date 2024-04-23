@@ -1,6 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from config.config import MetricsMetaData
 from config.types_enums import ModelBackboneTypes, EvalMetric, DirectionTypes
@@ -110,7 +108,6 @@ q.to_csv("./a.csv")
 
 a = pd.read_csv("./a.csv")
 a = a.sort_values("order")
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 

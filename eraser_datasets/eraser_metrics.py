@@ -1,28 +1,17 @@
-import argparse
-import json
 import logging
-import os
-import pprint
-
-from collections import Counter, defaultdict, namedtuple
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Tuple
 
 import numpy as np
-import torch
-
 from scipy.stats import entropy
-from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, precision_recall_curve, \
-    roc_auc_score
+from sklearn.metrics import (accuracy_score, auc, average_precision_score, classification_report,
+                             precision_recall_curve,
+                             roc_auc_score)
 
 from eraser_datasets.eraser_utils import (
-    Annotation,
-    Evidence,
-    annotations_from_jsonl,
-    load_jsonl,
-    load_documents,
-    load_flattened_documents
+    Annotation
 )
 
 logging.basicConfig(level = logging.DEBUG, format = '%(relativeCreated)6d %(threadName)s %(message)s')

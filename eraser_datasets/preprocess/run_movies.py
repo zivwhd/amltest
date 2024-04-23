@@ -1,4 +1,5 @@
 import json
+
 from eraser_datasets.eraser_utils import load_flattened_documents
 
 movies_url = "/home/yonatanto/work/theza/LOCAL_DATA/movies_2/movies"

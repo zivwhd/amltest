@@ -1,5 +1,6 @@
-import pandas as pd
 from glob import glob
+
+import pandas as pd
 
 from config.config import MetricsMetaData
 from config.types_enums import DirectionTypes

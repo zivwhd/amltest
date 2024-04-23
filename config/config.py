@@ -1,5 +1,3 @@
-import torch
-
 from config.types_enums import *
 from utils.dataclasses import Task
 

@@ -4,19 +4,15 @@ import pickle
 import sys
 from typing import List
 
-import pandas as pd
-
-from eraser_datasets.eraser_utils import scores_per_word_from_scores_per_token
-from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
+from main.utils.baselines_utils import get_model, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
 from main.utils.seg_ig import SequentialIntegratedGradients
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from config.config import BackbonesMetaData, ExpArgs
-from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalMetric
+from config.types_enums import RefTokenNameTypes, AttrScoreFunctions
 from utils.utils_functions import (run_model, get_device, is_model_encoder_only)
-from eraser_datasets.eraser_metrics import main
 import torch
 
 from captum.attr import (DeepLift, GradientShap, InputXGradient, IntegratedGradients, Lime)

@@ -154,7 +154,7 @@ class Baselines:
 
             if AttrScoreFunctions.lime.value == ExpArgs.attr_score_function:
                 explainer = Lime(self.lime_func)
-                _attr = explainer.attribute(input_ids)
+                _attr = explainer.attribute(input_ids, target=pred_origin_logits.max(1)[1])
                 attr_scores = _attr.squeeze().detach()
 
             if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attr_score_function:
@@ -333,5 +333,5 @@ class Baselines:
         with torch.no_grad():
             logits = run_model(model = self.model, input_ids = sentences, is_return_logits = True)
 
-        probs = torch.nn.functional.softmax(logits, dim = -1).squeeze().cpu().numpy()
+        probs = torch.nn.functional.softmax(logits, dim = -1).cpu()
         return probs

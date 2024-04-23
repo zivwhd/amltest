@@ -1,6 +1,5 @@
 import json
 import os
-
 from dataclasses import dataclass, asdict, is_dataclass
 from itertools import chain
 from typing import Dict, List, Set, Tuple, Union, FrozenSet
