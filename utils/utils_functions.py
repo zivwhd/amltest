@@ -62,6 +62,8 @@ def run_model(model, input_ids: Tensor = None, attention_mask: Tensor = None, in
         logits = model_output.logits
     else:
         if inputs_embeds is not None:
+            if inputs_embeds.dtype != torch.bfloat16:
+                inputs_embeds = inputs_embeds.bfloat16()
             logits = model(inputs_embeds = inputs_embeds, attention_mask = attention_mask).logits
         else:
             logits = model(input_ids = input_ids, attention_mask = attention_mask).logits

@@ -24,7 +24,7 @@ class AltiBaseline:
                                                            resultant_norm=resultant_norm)
         contributions_mix = compute_joint_attention(normalized_contributions)
         joint_attention_layer = -1
-        pos = 0
+        position = 0
         # contributions_mix_cls = contributions_mix[joint_attention_layer][pos]
         contributions_mix_cls = contributions_mix[joint_attention_layer]
         return contributions_mix_cls

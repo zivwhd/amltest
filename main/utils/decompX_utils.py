@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from DecompX.src.decompx_utils import DecompXConfig
 from DecompX.src.modeling_bert import BertForSequenceClassification
-from DecompX.src.modeling_roberta import RobertaForSequenceClassification
 from DecompX.src.modeling_distilbert import DistilBertForSequenceClassification
+from DecompX.src.modeling_roberta import RobertaForSequenceClassification
 
 from config.constants import HF_CACHE
 

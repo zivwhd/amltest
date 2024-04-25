@@ -7,6 +7,7 @@ from typing import List
 
 from torch import Tensor
 
+from config.tasks import IMDB_TASK, AGN_TASK
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
 from main.utils.seg_ig import SequentialIntegratedGradients
@@ -16,7 +17,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from config.config import BackbonesMetaData, ExpArgs
 from config.constants import TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LLM_EXP_PROMPT
-from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalTokens, EvalMetric
+from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalTokens, EvalMetric, ModelBackboneTypes
 from utils.utils_functions import (run_model, get_device, is_model_encoder_only, merge_prompts, conv_to_word_embedding,
                                    is_use_prompt)
 
@@ -154,7 +155,7 @@ class Baselines:
 
             if AttrScoreFunctions.lime.value == ExpArgs.attr_score_function:
                 explainer = Lime(self.lime_func)
-                _attr = explainer.attribute(input_ids, target=pred_origin_logits.max(1)[1])
+                _attr = explainer.attribute(input_ids, target = pred_origin_logits.max(1)[1])
                 attr_scores = _attr.squeeze().detach()
 
             if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attr_score_function:
@@ -171,18 +172,38 @@ class Baselines:
 
             if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attr_score_function:
                 explainer = SequentialIntegratedGradients(nn_forward_func)
-                _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
+
+                n_steps = 50  # default value
+                if not is_model_encoder_only():
+                    n_steps = 10
+                    if ExpArgs.task.name in [IMDB_TASK.name, AGN_TASK.name]:
+                        n_steps = 4
+                _attr = explainer.attribute(input_embed, baselines = ref_input_embed, n_steps = n_steps,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
-                attr_scores = summarize_attributions(_attr)
+                attr_scores = summarize_attributions(_attr).detach()
+
+                del explainer
+                del _attr
 
             if AttrScoreFunctions.decompX.value == ExpArgs.attr_score_function:
                 decompse = DecomposeXBaseline(self.model_path)
                 attr_scores = decompse.compute_attr(input_ids, attention_mask)
 
             if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
+                alti_input_ids, alti_attention_mask = input_ids.clone(), attention_mask.clone()
+                origin_model_max_length = self.tokenizer.model_max_length
+                if (not is_model_encoder_only()) and (self.task.name in [IMDB_TASK.name]):
+                    alti_input_ids, alti_attention_mask = self.get_alti_input(txt)
+
                 alti = AltiBaseline(self.model)
-                _attr = alti.compute_attr(input_ids, attention_mask)
-                attr_scores = summarize_attributions(_attr, sum_dim = 0)
+                _attr = alti.compute_attr(alti_input_ids, alti_attention_mask)
+                attr_scores = summarize_attributions(_attr, sum_dim = 0).detach()
+
+                del alti
+                del _attr
+
+                if origin_model_max_length != self.tokenizer.model_max_length:
+                    self.tokenizer.model_max_length = origin_model_max_length
 
             if AttrScoreFunctions.glob_enc.value == ExpArgs.attr_score_function:
                 _attr = self.run_glob_enc(txt, input_ids, attention_mask)
@@ -220,14 +241,32 @@ class Baselines:
             if AttrScoreFunctions.llm.value == ExpArgs.attr_score_function:
                 try:
                     with torch.no_grad():
-                        prompt = "\n\n".join([LLM_EXP_PROMPT, txt, "keywords:"])
+                        # prompt = "\n\n".join([LLM_EXP_PROMPT, txt, "keywords:"])
+                        prompt = "\n\n".join([
+                            "You are a professional assistant for extracting keywords from text given to you. Text for keywords extraction is:" + "\n" + f"Text: {txt}",
+                            "Extract the keywords from the above text. Arrange the keywords in order of importance. Write END! after the last keyword",
+                            "keywords:"])
                         prompt_input = self.tokenizer.encode(prompt, return_tensors = "pt")
                         out = self.model.generate(prompt_input.cuda(), top_p = 0.0, temperature = 1e-10,
-                                                  max_new_tokens = len(txt.split()))
+                                                  max_new_tokens = len(txt.split()) + 50)
                         out = out[:, prompt_input.shape[-1]:]
                         keywords = self.tokenizer.batch_decode(out)
-                        keywords = [i[2:] for i in keywords[0].split("\n") if i.startswith("- ")]
-
+                        valid_keywords = []
+                        for k in keywords[0].split():
+                            w = k.strip()
+                            if w == "END!":
+                                break
+                            elif len(w) < 2:
+                                continue
+                            if (w[0] == "_") or (w[0] == "-"):
+                                w = w[1:]
+                            elif w[0].isdigit() and w[1] == ".":
+                                continue
+                            elif w[0].isdigit() and w[1].isdigit():
+                                continue
+                            else:
+                                valid_keywords.append(w)
+                        keywords = valid_keywords
                         input_input_ids_squeezed = input_ids.squeeze()
                         attr_score = torch.zeros_like(input_ids.squeeze())
                         print(keywords, flush = True)
@@ -242,6 +281,9 @@ class Baselines:
 
             if attr_scores is None:
                 raise ValueError("attr_scores score can not be none")
+
+            gc.collect()
+            torch.cuda.empty_cache()
 
             eval_attr_score = attr_scores
             if is_use_prompt():
@@ -335,3 +377,33 @@ class Baselines:
 
         probs = torch.nn.functional.softmax(logits, dim = -1).cpu()
         return probs
+
+    def get_alti_input(self, txt):
+        alti_max_len = 350
+        if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
+            self.tokenizer.model_max_length = alti_max_len
+        elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
+            self.tokenizer.model_max_length = alti_max_len
+        else:
+            raise ValueError(f"explained_model_backbone issue")
+
+        # prompt_shots = self.task.llm_few_shots[
+        #                :ExpArgs.max_shots] if ExpArgs.max_shots != -1 else self.task.llm_few_shots
+        # alti_llm_few_shots_prompt = "\n\n".join(
+        #     ["\n".join([TEXT_PROMPT + i[0], LABEL_PROMPT + str(i[1])]) for i in prompt_shots])
+        # alti_task_prompt = "\n\n".join([self.task.llm_task_prompt, alti_llm_few_shots_prompt, TEXT_PROMPT])
+        alti_task_prompt = "\n\n".join([self.task.llm_task_prompt, TEXT_PROMPT])
+        alti_task_prompt_input_ids, alti_task_prompt_attention_mask = self.encode(alti_task_prompt, True)
+
+        (alti_input_ids, _, _, _, _, _, _, _, alti_attention_mask) = get_inputs(tokenizer = self.tokenizer,
+                                                                                model = self.model,
+                                                                                model_name = self.model_name,
+                                                                                ref_token = self.ref_token, text = txt,
+                                                                                device = self.device)
+        alti_input_ids, alti_attention_mask = merge_prompts(inputs = alti_input_ids,
+                                                            attention_mask = alti_attention_mask,
+                                                            task_prompt_input_ids = alti_task_prompt_input_ids,
+                                                            label_prompt_input_ids = self.label_prompt_input_ids,
+                                                            task_prompt_attention_mask = alti_task_prompt_attention_mask,
+                                                            label_prompt_attention_mask = self.label_prompt_attention_mask)
+        return alti_input_ids, alti_attention_mask
