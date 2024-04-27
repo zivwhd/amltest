@@ -7,7 +7,7 @@ from typing import List
 
 from torch import Tensor
 
-from config.tasks import IMDB_TASK, AGN_TASK
+from config.tasks import IMDB_TASK, AGN_TASK, SST_TASK, EMOTION_TASK, RTN_TASK
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
 from main.utils.seg_ig import SequentialIntegratedGradients
@@ -192,7 +192,9 @@ class Baselines:
             if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
                 alti_input_ids, alti_attention_mask = input_ids.clone(), attention_mask.clone()
                 origin_model_max_length = self.tokenizer.model_max_length
-                if (not is_model_encoder_only()) and (self.task.name in [IMDB_TASK.name]):
+                if (not is_model_encoder_only()) and (
+                        self.task.name in [IMDB_TASK.name, SST_TASK.name, RTN_TASK.name, AGN_TASK.name,
+                                           EMOTION_TASK.name]):
                     alti_input_ids, alti_attention_mask = self.get_alti_input(txt)
 
                 alti = AltiBaseline(self.model)
