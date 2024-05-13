@@ -16,7 +16,7 @@ from utils.dataclasses.evaluations import DataForEval, DataForEvalInputs
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from config.config import BackbonesMetaData, ExpArgs
-from config.constants import TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LLM_EXP_PROMPT
+from config.constants import TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LLM_EXP_PROMPT, LABEL_PROMPT
 from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalTokens, EvalMetric, ModelBackboneTypes
 from utils.utils_functions import (run_model, get_device, is_model_encoder_only, merge_prompts, conv_to_word_embedding,
                                    is_use_prompt)
@@ -192,9 +192,7 @@ class Baselines:
             if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
                 alti_input_ids, alti_attention_mask = input_ids.clone(), attention_mask.clone()
                 origin_model_max_length = self.tokenizer.model_max_length
-                if (not is_model_encoder_only()) and (
-                        self.task.name in [IMDB_TASK.name, SST_TASK.name, RTN_TASK.name, AGN_TASK.name,
-                                           EMOTION_TASK.name]):
+                if (not is_model_encoder_only()) and (self.task.name in [IMDB_TASK.name, AGN_TASK.name]):
                     alti_input_ids, alti_attention_mask = self.get_alti_input(txt)
 
                 alti = AltiBaseline(self.model)
@@ -382,6 +380,8 @@ class Baselines:
 
     def get_alti_input(self, txt):
         alti_max_len = 350
+        if ExpArgs.task.name in [IMDB_TASK.name]:
+            alti_max_len = 310
         if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
             self.tokenizer.model_max_length = alti_max_len
         elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
@@ -389,11 +389,13 @@ class Baselines:
         else:
             raise ValueError(f"explained_model_backbone issue")
 
+        # max_shots = 1
         # prompt_shots = self.task.llm_few_shots[
-        #                :ExpArgs.max_shots] if ExpArgs.max_shots != -1 else self.task.llm_few_shots
+        #                :max_shots] if max_shots != -1 else self.task.llm_few_shots
         # alti_llm_few_shots_prompt = "\n\n".join(
-        #     ["\n".join([TEXT_PROMPT + i[0], LABEL_PROMPT + str(i[1])]) for i in prompt_shots])
+        #      ["\n".join([TEXT_PROMPT + i[0], LABEL_PROMPT + str(i[1])]) for i in prompt_shots])
         # alti_task_prompt = "\n\n".join([self.task.llm_task_prompt, alti_llm_few_shots_prompt, TEXT_PROMPT])
+
         alti_task_prompt = "\n\n".join([self.task.llm_task_prompt, TEXT_PROMPT])
         alti_task_prompt_input_ids, alti_task_prompt_attention_mask = self.encode(alti_task_prompt, True)
 
@@ -408,4 +410,8 @@ class Baselines:
                                                             label_prompt_input_ids = self.label_prompt_input_ids,
                                                             task_prompt_attention_mask = alti_task_prompt_attention_mask,
                                                             label_prompt_attention_mask = self.label_prompt_attention_mask)
+
+        self.task_prompt_input_ids = alti_task_prompt_input_ids
+        self.task_prompt_attention_mask = alti_task_prompt_attention_mask
+
         return alti_input_ids, alti_attention_mask

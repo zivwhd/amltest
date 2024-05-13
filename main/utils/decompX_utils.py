@@ -27,7 +27,7 @@ class DecomposeXBaseline:
     def get_model(self):
         if "roberta" in self.model_path.lower():
             return RobertaForSequenceClassification.from_pretrained(self.model_path, cache_dir = HF_CACHE)
-        elif "distilbert" in self.model_path.lower():
+        elif ("distillbert" in self.model_path.lower()) or ("distilbert" in self.model_path.lower()):
             return DistilBertForSequenceClassification.from_pretrained(self.model_path, cache_dir = HF_CACHE)
         elif "bert" in self.model_path.lower():
             return BertForSequenceClassification.from_pretrained(self.model_path, cache_dir = HF_CACHE)
