@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List
 
 from torch import Tensor
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from config.tasks import IMDB_TASK, AGN_TASK, SST_TASK, EMOTION_TASK, RTN_TASK
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
@@ -16,7 +17,8 @@ from utils.dataclasses.evaluations import DataForEval, DataForEvalInputs
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from config.config import BackbonesMetaData, ExpArgs
-from config.constants import TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LLM_EXP_PROMPT, LABEL_PROMPT
+from config.constants import (TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LLM_EXP_PROMPT, LABEL_PROMPT, LOCAL_MODELS_PREFIX,
+                              HF_CACHE)
 from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalTokens, EvalMetric, ModelBackboneTypes
 from utils.utils_functions import (run_model, get_device, is_model_encoder_only, merge_prompts, conv_to_word_embedding,
                                    is_use_prompt)
@@ -60,6 +62,16 @@ class Baselines:
         self.label_prompt_attention_mask = None
         self.task_prompt_attention_mask = None
         self.set_prompts()
+
+        if AttrScoreFunctions.llm.value == ExpArgs.attr_score_function:
+            if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
+                model_path = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/INSTRUCT/meta-llama_Llama-2-7b-chat-hf"
+            elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
+                model_path = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/INSTRUCT/mistralai_Mistral-7B-Instruct-v0.1"
+            else:
+                raise ValueError("unsupported LLM")
+            self.instruct_model = AutoModelForCausalLM.from_pretrained(model_path, cache_dir = HF_CACHE)
+            self.instruct_tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir = HF_CACHE)
 
     def set_prompts(self):
         if is_use_prompt():
@@ -239,22 +251,26 @@ class Baselines:
                 attr_scores = torch.tensor(e["exp"])
 
             if AttrScoreFunctions.llm.value == ExpArgs.attr_score_function:
+                self.model = self.model.to("cpu")
+                gc.collect()
+                torch.cuda.empty_cache()
+                self.instruct_model = self.instruct_model.to("cuda")
                 try:
                     with torch.no_grad():
-                        # prompt = "\n\n".join([LLM_EXP_PROMPT, txt, "keywords:"])
                         prompt = "\n\n".join([
-                            "You are a professional assistant for extracting keywords from text given to you. Text for keywords extraction is:" + "\n" + f"Text: {txt}",
-                            "Extract the keywords from the above text. Arrange the keywords in order of importance. Write END! after the last keyword",
-                            "keywords:"])
-                        prompt_input = self.tokenizer.encode(prompt, return_tensors = "pt")
-                        out = self.model.generate(prompt_input.cuda(), top_p = 0.0, temperature = 1e-10,
-                                                  max_new_tokens = len(txt.split()) + 50)
+                            f"Sort the words of the given text by its importance for {self.task.task_definition} task, with comma between the words. Write END! at the end. Start the answer with Words:. Write nothing else.",
+                            "\n".join([f"Text: {txt}", "Words:"])])
+                        prompt_input = self.instruct_tokenizer.encode(prompt, return_tensors = "pt")
+                        out = self.instruct_model.generate(prompt_input.cuda(), top_p = 0.0, temperature = 1e-10,
+                                                           max_new_tokens = len(txt.split()) + 80)
                         out = out[:, prompt_input.shape[-1]:]
-                        keywords = self.tokenizer.batch_decode(out)
+                        keywords = self.tokenizer.batch_decode(out)[0]
+                        keywords = keywords.replace(self.instruct_tokenizer.eos_token, "")
                         valid_keywords = []
-                        for k in keywords[0].split():
+                        for k in keywords.split():
                             w = k.strip()
-                            if w == "END!":
+                            w = w.replace(",", "")
+                            if w.lower() == "end!":
                                 break
                             elif len(w) < 2:
                                 continue
@@ -267,17 +283,23 @@ class Baselines:
                             else:
                                 valid_keywords.append(w)
                         keywords = valid_keywords
-                        input_input_ids_squeezed = input_ids.squeeze()
-                        attr_score = torch.zeros_like(input_ids.squeeze())
-                        print(keywords, flush = True)
-                        for k in keywords:
+                        print(f"text-{txt}", flush = True)
+                        print(f"keywords-{keywords}", flush = True)
+                        input_ids_squeezed = input_ids.squeeze()
+                        attr_scores = torch.zeros_like(input_ids_squeezed, dtype = torch.float64)
+                        for idx_k, k in enumerate(keywords):
                             for token in self.tokenizer.encode(k, add_special_tokens = False):
-                                indices = torch.nonzero(torch.eq(input_input_ids_squeezed, token)).squeeze()
-                                attr_score[indices] = 1
-                        attr_scores = attr_score
+                                indices = torch.nonzero(torch.eq(input_ids_squeezed, token)).squeeze()
+                                attr_scores[indices] += 1 - (idx_k / len(keywords))
+                        print(f"attr_scores-{attr_scores}", flush = True)
                 except Exception as e:
                     print("ERR", flush = True)
-                    attr_scores = torch.zeros_like(input_ids.squeeze())
+                    attr_scores = torch.ones_like(input_ids.squeeze(), dtype = torch.float64)
+                    print(f"4-attr_scores-{attr_scores}", flush = True)
+                self.instruct_model = self.instruct_model.to("cpu")
+                gc.collect()
+                torch.cuda.empty_cache()
+                self.model = self.model.to("cuda")
 
             if attr_scores is None:
                 raise ValueError("attr_scores score can not be none")

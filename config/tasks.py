@@ -25,7 +25,7 @@ IMDB_TASK: Task = Task(dataset_name = "imdb", dataset_train = "train", dataset_v
                                #
                                1),
                            ("Long, boring, blasphemous. Never have I been so glad to see ending credits roll", 0)  #
-                       ])
+                       ], task_definition = "sentiment analysis")
 
 EMOTION_TASK: Task = Task(dataset_name = "emotion", dataset_train = "train", dataset_val = "validation",
                           dataset_test = "test", dataset_column_text = "text", dataset_column_label = "label",
@@ -59,7 +59,7 @@ EMOTION_TASK: Task = Task(dataset_name = "emotion", dataset_train = "train", dat
                                                   ('i felt good and feel fine today too', 1),  #
                                                   ('i began to feel accepted by gaia on her own terms', 2)  #
 
-                                                  ])
+                                                  ], task_definition = "emotion recognition")
 
 SST_TASK: Task = Task(dataset_name = "sst2", dataset_train = "train", dataset_val = "train",
                       dataset_test = "validation", dataset_column_text = "sentence", dataset_column_label = "label",
@@ -78,7 +78,7 @@ SST_TASK: Task = Task(dataset_name = "sst2", dataset_train = "train", dataset_va
                                               (
                                                   "on the worst revenge-of-the-nerds clichés the filmmakers could dredge up",
                                                   0)  #
-                                              ])
+                                              ], task_definition = "sentiment analysis")
 
 AGN_TASK: Task = Task(dataset_name = "ag_news", dataset_train = "train", dataset_val = "train", dataset_test = "test",
                       dataset_column_text = "text", dataset_column_label = "label",
@@ -130,7 +130,7 @@ AGN_TASK: Task = Task(dataset_name = "ag_news", dataset_train = "train", dataset
                               "The iPod's Big Brother Apple's latest computer is as cool and sleek as its best-selling music player",
                               2)  #
 
-                      ])
+                      ], task_definition = "news classification")
 
 RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes", dataset_train = "train", dataset_val = "validation",
                       dataset_test = "test", dataset_column_text = "text", dataset_column_label = "label",
@@ -155,4 +155,4 @@ RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes", dataset_train = "train",
                            1),  #
                           ("so exaggerated and broad that it comes off as annoying rather than charming .",  #
                            0)  #
-                      ])
+                      ], task_definition = "sentiment analysis")
