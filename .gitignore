@@ -1,4 +1,5 @@
 .idea/
+./.idea/*
 runs/eda/test.py
 runs/baselines/test.py
 fine_tune/llms/test.py

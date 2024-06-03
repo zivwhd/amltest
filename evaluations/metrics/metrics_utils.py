@@ -38,6 +38,12 @@ class MetricsFunctions:
             task_prompt_attention_mask = inputs.task_prompt_attention_mask,
             label_prompt_attention_mask = inputs.label_prompt_attention_mask  #
         )
+
+        # print(f"222222 - input_ids: {inputs_ids.shape}")
+        # print("\n\n" + "*" * 100)
+        # print(inputs_ids)
+        # print("\n\n" + "*" * 100)
+
         logits_perturbed = run_model(model = self.model, input_ids = inputs_ids.cuda(),
                                      attention_mask = attention_mask.cuda(), is_return_logits = True).squeeze()
         prob_perturbed = torch.softmax(logits_perturbed, dim = 0)

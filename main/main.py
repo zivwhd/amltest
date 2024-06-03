@@ -118,11 +118,12 @@ class Baselines:
             from main.utils.globenc_utils import GlobEncBaseline
             self.glob_enc_baseline = GlobEncBaseline
         elif ExpArgs.attr_score_function == AttrScoreFunctions.solvability.value:
-            sys.path.append(f"{os.getcwd()}/../../main/utils/solvability-explainer")
+            # sys.path.append(f"{os.getcwd()}/../../main/utils/solvability_explainer")
             if not is_model_encoder_only():
                 self.tokenizer.pad_token_id = self.tokenizer.unk_token_id
                 self.tokenizer.padding_side = "left"
-            from solvex import BeamSearchExplainer, TextWordMasker
+            from main.utils.solvability_explainer.solvex.explainer import BeamSearchExplainer
+            from main.utils.solvability_explainer.solvex.masker import TextWordMasker
 
         # Prepare forward model
         nn_forward_func = ForwardModel(model = self.model, model_name = self.model_name)
@@ -136,14 +137,15 @@ class Baselines:
             item_id = row[2]
             label = row[1]
             txt = row[0]
-            (input_ids, ref_input_ids, input_embed, ref_input_embed, position_embed, ref_position_embed, type_embed,
-             ref_type_embed, attention_mask) = get_inputs(tokenizer = self.tokenizer, model = self.model,
-                                                          model_name = self.model_name, ref_token = self.ref_token,
-                                                          text = txt, device = self.device)
-            input_ids, attention_mask = self.merge_prompts_handler(input_ids, attention_mask)
-            ref_input_ids, _ = self.merge_prompts_handler(ref_input_ids, attention_mask)
-            input_embed, _ = self.merge_prompts_embeddings__handler(input_embed, attention_mask)
-            ref_input_embed, _ = self.merge_prompts_embeddings__handler(ref_input_embed, attention_mask)
+            (origin_input_ids, origin_ref_input_ids, origin_input_embed, origin_ref_input_embed, position_embed,
+             ref_position_embed, type_embed, ref_type_embed, origin_attention_mask) = get_inputs(
+                tokenizer = self.tokenizer, model = self.model, model_name = self.model_name,
+                ref_token = self.ref_token, text = txt, device = self.device)
+            attention_mask = origin_attention_mask.clone()
+            input_ids, attention_mask = self.merge_prompts_handler(origin_input_ids.clone(), attention_mask)
+            ref_input_ids, _ = self.merge_prompts_handler(origin_ref_input_ids.clone(), attention_mask)
+            input_embed, _ = self.merge_prompts_embeddings__handler(origin_input_embed.clone(), attention_mask)
+            ref_input_embed, _ = self.merge_prompts_embeddings__handler(origin_ref_input_embed.clone(), attention_mask)
 
             with torch.no_grad():
                 pred_origin_logits = run_model(model = self.model, input_ids = input_ids,
@@ -245,8 +247,8 @@ class Baselines:
                     raise ValueError("Err")
 
                 masker = TextWordMasker(suppression = suppression)
-                explainer = BeamSearchExplainer(masker, f = self.solvability_func, beam_size = 50, batch_size = 50,
-                                                metric = metric)
+                explainer = BeamSearchExplainer(masker, f = self.solvability_func, beam_size = ExpArgs.BEAM_SIZE,
+                                                batch_size = 50, metric = metric)
                 e = explainer.explain_instance(sentence, label = model_pred_origin.squeeze().item())
                 attr_scores = torch.tensor(e["exp"])
 
@@ -285,16 +287,24 @@ class Baselines:
                         keywords = valid_keywords
                         print(f"text-{txt}", flush = True)
                         print(f"keywords-{keywords}", flush = True)
-                        input_ids_squeezed = input_ids.squeeze()
-                        attr_scores = torch.zeros_like(input_ids_squeezed, dtype = torch.float64)
-                        for idx_k, k in enumerate(keywords):
-                            for token in self.tokenizer.encode(k, add_special_tokens = False):
-                                indices = torch.nonzero(torch.eq(input_ids_squeezed, token)).squeeze()
-                                attr_scores[indices] += 1 - (idx_k / len(keywords))
+                        origin_input_ids_squeezed = origin_input_ids.squeeze()
+                        attr_scores = torch.zeros_like(origin_input_ids, dtype = torch.float64).squeeze()
+                        if len(keywords) > 0:
+                            for idx_k, k in enumerate(keywords):
+                                try:
+                                    for token in self.tokenizer.encode(k, add_special_tokens = False):
+                                        indices = torch.nonzero(torch.eq(origin_input_ids_squeezed, token)).squeeze()
+                                        try:
+                                            attr_scores[indices] += 1 - (idx_k / len(keywords))
+                                        except Exception as e2:
+                                            print(f"issue - indices - {indices}. e2: {e2}", flush = True)
+                                except Exception as e1:
+                                    print(f"issue - for token in self.tokenizer.encode - {e1}", flush = True)
+
                         print(f"attr_scores-{attr_scores}", flush = True)
                 except Exception as e:
-                    print("ERR", flush = True)
-                    attr_scores = torch.ones_like(input_ids.squeeze(), dtype = torch.float64)
+                    print("ERR - {e}", flush = True)
+                    attr_scores = torch.ones_like(origin_input_ids.squeeze(), dtype = torch.float64)
                     print(f"4-attr_scores-{attr_scores}", flush = True)
                 self.instruct_model = self.instruct_model.to("cpu")
                 gc.collect()
@@ -308,10 +318,16 @@ class Baselines:
             torch.cuda.empty_cache()
 
             eval_attr_score = attr_scores
-            if is_use_prompt():
+            if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attr_score_function):
+                # print(f"before prompt - eval_attr_score.shape: {eval_attr_score.shape}")
                 eval_attr_score = attr_scores[
                                   self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[-1]].detach()
-
+                # print(f"after prompt - eval_attr_score.shape: {eval_attr_score.shape}")
+                # print("\n\n" + "-" * 100)
+                # print(self.tokenizer.batch_decode(input_ids)[0])
+                # print("\n\n" + "-" * 100)
+                print(input_ids)
+                print("\n\n" + "^" * 100)
             for metric in self.metrics:
                 if is_model_encoder_only():
                     test_eval_tokens = EvalTokens
@@ -325,11 +341,12 @@ class Baselines:
                     ExpArgs.eval_metric = metric.value
                     ExpArgs.eval_tokens = eval_token.value
 
+                    print(f"1111111 - input_ids: {input_ids.shape}")
                     data_for_eval: DataForEval = DataForEval(  #
                         tokens_attr = eval_attr_score.detach(),  #
                         input = DataForEvalInputs(  #
-                            input_ids = input_ids,  #
-                            attention_mask = attention_mask,  #
+                            input_ids = origin_input_ids,  #
+                            attention_mask = origin_attention_mask,  #
                             task_prompt_input_ids = self.task_prompt_input_ids,  #
                             label_prompt_input_ids = self.label_prompt_input_ids,  #
                             task_prompt_attention_mask = self.task_prompt_attention_mask,  #
