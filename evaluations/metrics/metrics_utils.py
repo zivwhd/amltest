@@ -109,7 +109,7 @@ class MetricsFunctions:
         result = (prob_original[item_args.pred_origin] - prob_perturbed[item_args.pred_origin]).item()
         return result
 
-    def get_indices(self, item_args: DataForEval) -> Tuple[Tensor, int]:
+    def get_indices(self, item_args: DataForEval) -> Tuple[Tensor, Tensor]:
         tokens_attr, n_attr, required_tokens = self.eval_tokens_handler(item_args)
         k = int(n_attr * item_args.k / 100)
         topk_indices = torch.topk(tokens_attr, k, sorted = False).indices
@@ -118,7 +118,7 @@ class MetricsFunctions:
             overlap = bool(set(topk_indices.tolist()).intersection(set(required_tokens.tolist())))
             if overlap:
                 raise ValueError(f"required_tokens souled not be in the topk_indices")
-        return topk_indices, k
+        return topk_indices, required_tokens
 
     def eval_tokens_handler(self, item_args: DataForEval) -> Tuple[Tensor, Tensor, Union[Tensor, None]]:
         val = float('-inf')

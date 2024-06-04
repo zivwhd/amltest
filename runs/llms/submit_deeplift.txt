@@ -9,7 +9,7 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=30g
+#SBATCH --mem=40g
 #SBATCH --gpus=1
 #SBATCH --nodelist=gpu7
 
@@ -25,6 +25,8 @@ python run_baselines.py sst deep_lift LLAMA all
 python run_baselines.py sst deep_lift MISTRAL all
 python run_baselines.py rtn deep_lift LLAMA all
 python run_baselines.py rtn deep_lift MISTRAL all
+python run_baselines.py emotions deep_lift LLAMA all
+python run_baselines.py emotions deep_lift MISTRAL all
 python run_baselines.py agn deep_lift LLAMA all
 python run_baselines.py agn deep_lift MISTRAL all
 python run_baselines.py imdb deep_lift LLAMA all
