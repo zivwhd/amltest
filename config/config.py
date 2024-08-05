@@ -6,7 +6,6 @@ class ExpArgs:
     seed = 42
     default_root_dir = "OUT"
     ref_token_name: RefTokenNameTypes = RefTokenNameTypes.MASK.value
-    verbose = True
     eval_metric: str = None
     is_save_support_results = True
     is_save_results = True
@@ -16,6 +15,8 @@ class ExpArgs:
     validation_type = ValidationType.VAL.value
     labels_tokens_opt = None
     eval_tokens = None
+    is_evaluate = True
+    is_save_times = False
 
 
 ExpArgsDefault = type('ClonedExpArgs', (), vars(ExpArgs).copy())

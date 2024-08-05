@@ -34,7 +34,7 @@ class DecomposeXBaseline:
         else:
             raise Exception(f"Not implented model: {self.model_path}")
 
-    def compute_attr(self, input_ids_origin, attention_mask_origin):
+    def compute_attr(self, input_ids_origin, attention_mask_origin, origin_label):
         input_ids = torch.concat([input_ids_origin, input_ids_origin], dim = 0)
         attention_mask = torch.concat([attention_mask_origin, attention_mask_origin], dim = 0)
 
@@ -45,11 +45,10 @@ class DecomposeXBaseline:
                 output_hidden_states = True, decompx_config = self.CONFIGS["DecompX"])
 
         importance = np.array([g.squeeze().cpu().detach().numpy() for g in
-                               decompx_last_layer_outputs.aggregated]).squeeze()  # (batch, seq_len, seq_len)
-        importance = [importance[j][:batch_lengths[j], :batch_lengths[j]] for j in range(len(importance))]
-        importance = importance / np.abs(importance).max() / 1.5  # Normalize
+                               decompx_last_layer_outputs.classifier]).squeeze()  # (batch, seq_len, classes)
+        importance = [importance[j][:batch_lengths[j], :] for j in range(len(importance))]
 
         importance = importance[0]  # duplicate input
-        importance = importance[0, :]  # as in the demo
+        importance = importance[:, origin_label]
 
         return importance

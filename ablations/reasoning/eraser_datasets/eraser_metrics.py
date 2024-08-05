@@ -10,7 +10,7 @@ from sklearn.metrics import (accuracy_score, auc, average_precision_score, class
                              precision_recall_curve,
                              roc_auc_score)
 
-from eraser_datasets.eraser_utils import (
+from ablations.reasoning.eraser_datasets.eraser_utils import (
     Annotation
 )
 

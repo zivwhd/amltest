@@ -46,4 +46,4 @@ class GlobEncBaseline:
             globenc = AttentionRollout().compute_flows([norm_nenc], output_hidden_states=False)[0]
             globenc = np.array(globenc)
             # print("Aggregated N-Enc token attribution (GlobEnc):", globenc.shape)
-            return globenc
+            return globenc.squeeze()[0]

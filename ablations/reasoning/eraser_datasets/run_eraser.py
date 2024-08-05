@@ -1,13 +1,13 @@
 import argparse
 import sys
 
-sys.path.append(".")
-sys.path.append("..")
+sys.path.append("")
+sys.path.append("../../..")
 
 import pandas as pd
 
 from config.types_enums import ModelBackboneTypes, RefTokenNameTypes
-from eraser_datasets.main_items.main_item import BaselinesItem
+from ablations.reasoning.eraser_datasets.main_items.main_item import BaselinesItem
 from config.config import ExpArgs
 from config.tasks import IMDB_TASK
 

@@ -9,12 +9,20 @@ class ModelBackboneTypes(Enum):
     MISTRAL = 'MISTRAL'
 
 
+class DefaultEvalMetric(Enum):
+    SUFFICIENCY = 'SUFFICIENCY'
+    COMPREHENSIVENESS = 'COMPREHENSIVENESS'
+    EVAL_LOG_ODDS = 'EVAL_LOG_ODDS'
+    AOPC_SUFFICIENCY = 'AOPC_SUFFICIENCY'
+    AOPC_COMPREHENSIVENESS = 'AOPC_COMPREHENSIVENESS'
+
 class EvalMetric(Enum):
     SUFFICIENCY = 'SUFFICIENCY'
     COMPREHENSIVENESS = 'COMPREHENSIVENESS'
     EVAL_LOG_ODDS = 'EVAL_LOG_ODDS'
     AOPC_SUFFICIENCY = 'AOPC_SUFFICIENCY'
     AOPC_COMPREHENSIVENESS = 'AOPC_COMPREHENSIVENESS'
+    COMPREHENSIVENESS_SUFFICIENCY = 'COMPREHENSIVENESS_SUFFICIENCY'
 
 
 class DirectionTypes(Enum):
@@ -47,6 +55,7 @@ class AttrScoreFunctions(Enum):
     integrated_gradients = 'integrated_gradients'
     sequential_integrated_gradients = 'sequential_integrated_gradients'
     decompX = 'decompX'
+    decompX_class = 'decompX_class'
     alti = 'alti'
     glob_enc = 'glob_enc'
     glob_enc_dim_0 = 'glob_enc_dim_0'

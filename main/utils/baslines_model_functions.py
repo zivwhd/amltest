@@ -40,7 +40,8 @@ def construct_input_ref_pair(tokenizer, text, ref_token_id, sep_token_id, cls_to
     text_ids = tokenizer.encode(text, add_special_tokens = False, truncation = True,
                                 max_length = tokenizer.max_len_single_sentence, )
     input_ids = ([cls_token_id] + text_ids + [sep_token_id])  # construct input token ids
-    ref_input_ids = ([cls_token_id] + [ref_token_id] * len(text_ids) + [sep_token_id])  # construct reference token ids
+    # ref_input_ids = ([cls_token_id] + [ref_token_id] * len(text_ids) + [sep_token_id])  # construct reference token ids
+    ref_input_ids = ([ref_token_id] + [ref_token_id] * len(text_ids) + [ref_token_id])  # construct reference token ids
 
     return torch.tensor([input_ids], device = device), torch.tensor([ref_input_ids], device = device)
 

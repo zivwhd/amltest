@@ -27,4 +27,4 @@ class AltiBaseline:
         position = 0
         # contributions_mix_cls = contributions_mix[joint_attention_layer][pos]
         contributions_mix_cls = contributions_mix[joint_attention_layer]
-        return contributions_mix_cls
+        return contributions_mix_cls[0]

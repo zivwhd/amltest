@@ -5,11 +5,11 @@ import sys
 from transformers import AutoTokenizer
 
 from config.constants import HF_CACHE
-from eraser_datasets.eraser_metrics import main
-from eraser_datasets.eraser_utils import scores_per_word_from_scores_per_token
+from ablations.reasoning.eraser_datasets.eraser_metrics import main
+from ablations.reasoning.eraser_datasets.eraser_utils import scores_per_word_from_scores_per_token
 
-sys.path.append(".")
-sys.path.append("..")
+sys.path.append("")
+sys.path.append("../../..")
 
 import pandas as pd
 
