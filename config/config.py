@@ -17,6 +17,7 @@ class ExpArgs:
     eval_tokens = None
     is_evaluate = True
     is_save_times = False
+    is_save_words = False
 
 
 ExpArgsDefault = type('ClonedExpArgs', (), vars(ExpArgs).copy())

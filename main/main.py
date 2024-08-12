@@ -143,8 +143,9 @@ class Baselines:
         times = []
         for i, row in enumerate(self.data):
             item_id = row[2]
-            label = row[1]
-            txt = row[0]
+            label = -1
+            # txt = row[0]
+            txt = "chen films the resolutely downbeat smokers only with every indulgent , indie trick in the book ."
             (origin_input_ids, origin_ref_input_ids, origin_input_embed, origin_ref_input_embed, position_embed,
              ref_position_embed, type_embed, ref_type_embed, origin_attention_mask) = get_inputs(
                 tokenizer = self.tokenizer, model = self.model, model_name = self.model_name,
@@ -212,12 +213,12 @@ class Baselines:
             if AttrScoreFunctions.decompX.value == ExpArgs.attr_score_function:
                 decompse = DecomposeXBaseline(self.model_path)
                 attr_scores = decompse.compute_attr(input_ids, attention_mask)
-                attr_scores= torch.tensor(attr_scores)
+                attr_scores = torch.tensor(attr_scores)
 
             if AttrScoreFunctions.decompX_class.value == ExpArgs.attr_score_function:
                 decompse = DecomposeXBaseline(self.model_path)
                 attr_scores = decompse.compute_attr(input_ids, attention_mask, model_pred_origin)
-                attr_scores= torch.tensor(attr_scores)
+                attr_scores = torch.tensor(attr_scores)
 
             if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
                 alti_input_ids, alti_attention_mask = input_ids.clone(), attention_mask.clone()
@@ -231,13 +232,12 @@ class Baselines:
 
                 del alti
                 # del _attr
-
                 if origin_model_max_length != self.tokenizer.model_max_length:
                     self.tokenizer.model_max_length = origin_model_max_length
 
             if AttrScoreFunctions.glob_enc.value == ExpArgs.attr_score_function:
-                attr_scores = self.run_glob_enc(txt, input_ids, attention_mask)
-                # attr_scores = summarize_attributions(_attr)
+                attr_scores = self.run_glob_enc(txt, input_ids,
+                                                attention_mask)  # attr_scores = summarize_attributions(_attr)
 
             # if AttrScoreFunctions.glob_enc_dim_0.value == ExpArgs.attr_score_function:
             #     _attr = self.run_glob_enc(txt, input_ids, attention_mask)
@@ -334,11 +334,16 @@ class Baselines:
 
             eval_attr_score = attr_scores
 
+            end = time.time()
+            duration = end - begin
+            times.append(duration)
+
             if ExpArgs.is_evaluate:
                 if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attr_score_function):
                     eval_attr_score = attr_scores[
                                       self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[
                                           -1]].detach()
+
 
                 for metric in self.metrics:
                     if is_model_encoder_only():
@@ -374,12 +379,12 @@ class Baselines:
                         torch.cuda.empty_cache()
 
                         if ExpArgs.is_save_results:
+                            metric_result_item["duration"] = [duration]
+                            if ExpArgs.is_save_words:
+                                metric_result_item["words"] = [[[self.tokenizer.convert_ids_to_tokens(t) for t in input_ids.squeeze()[torch.argsort(attr_scores, descending = True)].tolist()]]]
                             with open(Path(experiment_path, "results.csv"), 'a', newline = '',
                                       encoding = 'utf-8-sig') as f:
                                 metric_result_item.to_csv(f, header = f.tell() == 0, index = False)
-
-            end = time.time()
-            times.append(end - begin)
 
         print(f"duration: {np.array(times).mean()}")
 
