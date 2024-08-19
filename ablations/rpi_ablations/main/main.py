@@ -10,7 +10,7 @@ from torch import Tensor
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
 from main.utils.seg_ig import SequentialIntegratedGradients
-from utils.dataclasses.evaluations import DataForEval, DataForEvalInputs
+from utils.dataclasses.evaluations import DataForEvaluation, DataForEvaluationInputs
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -137,7 +137,6 @@ class Baselines:
                              label_prompt_input_ids = self.label_prompt_input_ids_embeddings,
                              task_prompt_attention_mask = self.task_prompt_attention_mask,
                              label_prompt_attention_mask = self.task_prompt_attention_mask)
-
 
     def run(self):
 
@@ -269,42 +268,30 @@ class Baselines:
                 print(input_ids)
                 print("\n\n" + "^" * 100)
             for metric in self.metrics:
-                if is_model_encoder_only():
-                    test_eval_tokens = [EvalTokens.NO_CLS]
-                else:
-                    test_eval_tokens = [EvalTokens.ALL_TOKENS]
+                experiment_path = self.get_folder_name(metric)
+                ExpArgs.eval_metric = metric.value
 
+                data_for_eval: DataForEvaluation = DataForEvaluation(  #
+                    tokens_attr = eval_attr_score.detach(),  #
+                    input = DataForEvaluationInputs(  #
+                        input_ids = origin_input_ids,  #
+                        attention_mask = origin_attention_mask,  #
+                        task_prompt_input_ids = self.task_prompt_input_ids,  #
+                        label_prompt_input_ids = self.label_prompt_input_ids,  #
+                        task_prompt_attention_mask = self.task_prompt_attention_mask,  #
+                        label_prompt_attention_mask = self.label_prompt_attention_mask  #
+                    ),  #
+                    explained_model_predicted_class = model_pred_origin.squeeze(),  #
+                    explained_model_predicted_logits = pred_origin_logits.squeeze())
 
-                for eval_token in test_eval_tokens:
-                    experiment_path = self.get_folder_name(metric)
-                    ExpArgs.eval_metric = metric.value
-                    ExpArgs.eval_tokens = eval_token.value
+                metric_result, metric_result_item = evaluate_tokens_attr(self.model, self.tokenizer, self.ref_token,
+                                                                         data = data_for_eval,
+                                                                         experiment_path = experiment_path,
+                                                                         item_index = f"{i}_{item_id}", )
 
-                    data_for_eval: DataForEval = DataForEval(  #
-                        tokens_attr = eval_attr_score.detach(),  #
-                        input = DataForEvalInputs(  #
-                            input_ids = origin_input_ids,  #
-                            attention_mask = origin_attention_mask,  #
-                            task_prompt_input_ids = self.task_prompt_input_ids,  #
-                            label_prompt_input_ids = self.label_prompt_input_ids,  #
-                            task_prompt_attention_mask = self.task_prompt_attention_mask,  #
-                            label_prompt_attention_mask = self.label_prompt_attention_mask  #
-                        ),  #
-                        pred_origin = model_pred_origin.squeeze(),  #
-                        pred_origin_logits = pred_origin_logits.squeeze(),  #
-                        gt_target = torch.tensor(label))
+            gc.collect()
+            torch.cuda.empty_cache()
 
-                        metric_result, metric_result_item = evaluate_tokens_attr(self.model, self.tokenizer,
-                                                                                 self.ref_token, data = data_for_eval,
-                                                                                 experiment_path = experiment_path,
-                                                                                 item_index = f"{i}_{item_id}", )
-
-                    gc.collect()
-                    torch.cuda.empty_cache()
-
-                    if ExpArgs.is_save_results:
-                        with open(Path(experiment_path, "results.csv"), 'a', newline = '', encoding = 'utf-8-sig') as f:
-                            metric_result_item.to_csv(f, header = f.tell() == 0, index = False)
-
-
-
+            if ExpArgs.is_save_results:
+                with open(Path(experiment_path, "results.csv"), 'a', newline = '', encoding = 'utf-8-sig') as f:
+                    metric_result_item.to_csv(f, header = f.tell() == 0, index = False)

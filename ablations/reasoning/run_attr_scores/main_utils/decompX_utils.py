@@ -34,21 +34,18 @@ class DecomposeXBaseline:
         else:
             raise Exception(f"Not implented model: {self.model_path}")
 
-    def compute_attr(self, input_ids_origin, attention_mask_origin, origin_label):
-        input_ids = torch.concat([input_ids_origin, input_ids_origin], dim = 0)
-        attention_mask = torch.concat([attention_mask_origin, attention_mask_origin], dim = 0)
-
+    def compute_attr(self, input_ids, attention_mask):
         with torch.no_grad():
             batch_lengths = attention_mask.sum(dim = -1)
             logits, hidden_states, decompx_last_layer_outputs, decompx_all_layers_outputs = self.model(
                 input_ids = input_ids, attention_mask = attention_mask, output_attentions = False, return_dict = False,
                 output_hidden_states = True, decompx_config = self.CONFIGS["DecompX"])
 
-        importance = np.array([g.squeeze().cpu().detach().numpy() for g in
-                               decompx_last_layer_outputs.classifier]).squeeze()  # (batch, seq_len, classes)
-        importance = [importance[j][:batch_lengths[j], :] for j in range(len(importance))]
+        importance = np.array(
+            [g.squeeze().cpu().detach().numpy() for g in decompx_last_layer_outputs.aggregated]).squeeze()
 
-        importance = importance[0]  # duplicate input
-        importance = importance[:, origin_label]
+        # importance = [importance[:batch_lengths, :batch_lengths] for j in range(len(importance))]
+        importance = torch.tensor(importance)[0, :]  # aggregated
+        importance = importance / np.abs(importance).max() / 1.5  # Normalize
 
         return importance

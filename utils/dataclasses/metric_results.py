@@ -12,6 +12,5 @@ class MetricResults:
     metric_steps_result: any
     steps_k: any
     model_pred_origin: Union[int, None]
-    gt_target: Union[int, None]
     eval_tokens: str
     attr_score_unction: str

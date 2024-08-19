@@ -15,7 +15,7 @@ from config.tasks import IMDB_TASK, AGN_TASK, SST_TASK, EMOTION_TASK, RTN_TASK
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
 from main.utils.seg_ig import SequentialIntegratedGradients
-from utils.dataclasses.evaluations import DataForEval, DataForEvalInputs
+from utils.dataclasses.evaluations import DataForEvaluation, DataForEvaluationInputs
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -143,9 +143,8 @@ class Baselines:
         times = []
         for i, row in enumerate(self.data):
             item_id = row[2]
-            label = -1
-            # txt = row[0]
-            txt = "chen films the resolutely downbeat smokers only with every indulgent , indie trick in the book ."
+            label = row[1]
+            txt = row[0]
             (origin_input_ids, origin_ref_input_ids, origin_input_embed, origin_ref_input_embed, position_embed,
              ref_position_embed, type_embed, ref_type_embed, origin_attention_mask) = get_inputs(
                 tokenizer = self.tokenizer, model = self.model, model_name = self.model_name,
@@ -232,6 +231,7 @@ class Baselines:
 
                 del alti
                 # del _attr
+
                 if origin_model_max_length != self.tokenizer.model_max_length:
                     self.tokenizer.model_max_length = origin_model_max_length
 
@@ -263,8 +263,9 @@ class Baselines:
                     raise ValueError("Err")
 
                 masker = TextWordMasker(suppression = suppression)
-                explainer = BeamSearchExplainer(masker, f = self.solvability_func, beam_size = ExpArgs.BEAM_SIZE,
-                                                batch_size = 50, metric = metric)
+                explainer = BeamSearchExplainer(masker, f = self.solvability_func,
+                                                beam_size = ExpArgs.SOLVABILITY_BATCH_SIZE, batch_size = 50,
+                                                metric = metric)
                 e = explainer.explain_instance(sentence, label = model_pred_origin.squeeze().item())
                 attr_scores = torch.tensor(e["exp"])
 
@@ -334,57 +335,44 @@ class Baselines:
 
             eval_attr_score = attr_scores
 
-            end = time.time()
-            duration = end - begin
-            times.append(duration)
-
             if ExpArgs.is_evaluate:
                 if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attr_score_function):
                     eval_attr_score = attr_scores[
                                       self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[
                                           -1]].detach()
 
-
                 for metric in self.metrics:
-                    if is_model_encoder_only():
-                        test_eval_tokens = [EvalTokens.NO_CLS]
-                    else:
-                        test_eval_tokens = [EvalTokens.ALL_TOKENS]
+                    experiment_path = self.get_folder_name(metric)
+                    ExpArgs.eval_metric = metric.value
 
-                    for eval_token in test_eval_tokens:
-                        experiment_path = self.get_folder_name(metric)
-                        ExpArgs.eval_metric = metric.value
-                        ExpArgs.eval_tokens = eval_token.value
+                    data_for_eval: DataForEvaluation = DataForEvaluation(  #
+                        tokens_attr = eval_attr_score.detach(),  #
+                        input = DataForEvaluationInputs(  #
+                            input_ids = origin_input_ids,  #
+                            attention_mask = origin_attention_mask,  #
+                            task_prompt_input_ids = self.task_prompt_input_ids,  #
+                            label_prompt_input_ids = self.label_prompt_input_ids,  #
+                            task_prompt_attention_mask = self.task_prompt_attention_mask,  #
+                            label_prompt_attention_mask = self.label_prompt_attention_mask  #
+                        ),  #
+                        explained_model_predicted_class = model_pred_origin.squeeze(),  #
+                        explained_model_predicted_logits = pred_origin_logits.squeeze())
 
-                        data_for_eval: DataForEval = DataForEval(  #
-                            tokens_attr = eval_attr_score.detach(),  #
-                            input = DataForEvalInputs(  #
-                                input_ids = origin_input_ids,  #
-                                attention_mask = origin_attention_mask,  #
-                                task_prompt_input_ids = self.task_prompt_input_ids,  #
-                                label_prompt_input_ids = self.label_prompt_input_ids,  #
-                                task_prompt_attention_mask = self.task_prompt_attention_mask,  #
-                                label_prompt_attention_mask = self.label_prompt_attention_mask  #
-                            ),  #
-                            pred_origin = model_pred_origin.squeeze(),  #
-                            pred_origin_logits = pred_origin_logits.squeeze(),  #
-                            gt_target = torch.tensor(label))
+                    evaluation_result, evaluation_item = evaluate_tokens_attr(self.model, self.tokenizer,
+                                                                              self.ref_token, data = data_for_eval,
+                                                                              experiment_path = experiment_path,
+                                                                              item_index = f"{i}_{item_id}")
 
-                        metric_result, metric_result_item = evaluate_tokens_attr(self.model, self.tokenizer,
-                                                                                 self.ref_token, data = data_for_eval,
-                                                                                 experiment_path = experiment_path,
-                                                                                 item_index = f"{i}_{item_id}", )
+                    gc.collect()
+                    torch.cuda.empty_cache()
 
-                        gc.collect()
-                        torch.cuda.empty_cache()
+                    if ExpArgs.is_save_results:
+                        evaluation_item["txt"] = txt
+                        with open(Path(experiment_path, "results.csv"), 'a', newline = '', encoding = 'utf-8-sig') as f:
+                            evaluation_item.to_csv(f, header = f.tell() == 0, index = False)
 
-                        if ExpArgs.is_save_results:
-                            metric_result_item["duration"] = [duration]
-                            if ExpArgs.is_save_words:
-                                metric_result_item["words"] = [[[self.tokenizer.convert_ids_to_tokens(t) for t in input_ids.squeeze()[torch.argsort(attr_scores, descending = True)].tolist()]]]
-                            with open(Path(experiment_path, "results.csv"), 'a', newline = '',
-                                      encoding = 'utf-8-sig') as f:
-                                metric_result_item.to_csv(f, header = f.tell() == 0, index = False)
+            end = time.time()
+            times.append(end - begin)
 
         print(f"duration: {np.array(times).mean()}")
 
@@ -456,13 +444,6 @@ class Baselines:
             self.tokenizer.model_max_length = alti_max_len
         else:
             raise ValueError(f"explained_model_backbone issue")
-
-        # max_shots = 1
-        # prompt_shots = self.task.llm_few_shots[
-        #                :max_shots] if max_shots != -1 else self.task.llm_few_shots
-        # alti_llm_few_shots_prompt = "\n\n".join(
-        #      ["\n".join([TEXT_PROMPT + i[0], LABEL_PROMPT + str(i[1])]) for i in prompt_shots])
-        # alti_task_prompt = "\n\n".join([self.task.llm_task_prompt, alti_llm_few_shots_prompt, TEXT_PROMPT])
 
         alti_task_prompt = "\n\n".join([self.task.llm_task_prompt, TEXT_PROMPT])
         alti_task_prompt_input_ids, alti_task_prompt_attention_mask = self.encode(alti_task_prompt, True)

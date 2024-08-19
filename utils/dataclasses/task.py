@@ -7,7 +7,7 @@ class Task:
     def __init__(self, dataset_name: str, dataset_train: str, dataset_val: str, dataset_test: str,
                  dataset_column_text: str, dataset_column_label: str, bert_fine_tuned_model: str,
                  roberta_fine_tuned_model: str, distilbert_fine_tuned_model: str, llama_model: str, mistral_model: str,
-                 is_llm_use_lora: bool, labels_str_int_maps: Union[Dict, None], test_sample: Union[int, None],
+                 is_finetuned_with_lora: bool, labels_str_int_maps: Union[Dict, None], test_sample: Union[int, None],
                  name: str, llm_task_prompt: str, llm_few_shots_prompt: List[Tuple[str, int]], task_definition: str,
                  is_llm_set_max_len = False, llama_adapter: str = None, mistral_adapter: str = None,
                  llm_explained_tokenizer_max_length: int = -1):
@@ -25,7 +25,7 @@ class Task:
         self.mistral_model = mistral_model
         self.llama_adapter = llama_adapter
         self.mistral_adapter = mistral_adapter
-        self.is_llm_use_lora = is_llm_use_lora
+        self.is_llm_use_lora = is_finetuned_with_lora
         self.labels_str_int_maps = labels_str_int_maps
         self.labels_int_str_maps = {value: key for key, value in
                                     labels_str_int_maps.items()} if labels_str_int_maps else None

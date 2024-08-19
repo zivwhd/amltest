@@ -15,6 +15,7 @@ parser.add_argument('task', type = str, help = '')
 parser.add_argument('attribution_score_function', type = str, help = '')
 parser.add_argument('explained_model_backbone', type = str, help = '')
 parser.add_argument('metric', type = str, help = '')
+parser.add_argument('solvability_batch_size', type = str, help = '')
 
 args = parser.parse_args()
 
@@ -22,10 +23,12 @@ arg_task = args.task
 arg_explained_model_backbone = args.explained_model_backbone
 arg_attribution_score_function = args.attribution_score_function
 arg_metric = DefaultEvalMetric if args.metric == "all" else [EvalMetric[args.metric]]
+print(f"args.solvability_batch_size: {args.solvability_batch_size}")
+arg_solvability_batch_size = args.solvability_batch_size
 
 ExpArgs.task = get_task(arg_task)
 ExpArgs.explained_model_backbone = arg_explained_model_backbone
-
+ExpArgs.SOLVABILITY_BATCH_SIZE = int(arg_solvability_batch_size)
 ExpArgs.ref_token_name = RefTokenNameTypes.MASK.value if is_model_encoder_only() else RefTokenNameTypes.UNK.value
 
 exp_path = f"{ExpArgs.task.name}_{ExpArgs.explained_model_backbone}_{arg_attribution_score_function}_{get_current_time()}"

@@ -4,7 +4,7 @@ from torch import Tensor
 
 
 @dataclass
-class DataForEvalInputs:
+class DataForEvaluationInputs:
     input_ids: Tensor
     attention_mask: Tensor
     task_prompt_input_ids: Tensor
@@ -14,10 +14,9 @@ class DataForEvalInputs:
 
 
 @dataclass
-class DataForEval:
+class DataForEvaluation:
     tokens_attr: Tensor
-    input: DataForEvalInputs
-    gt_target: Tensor
-    pred_origin: Tensor
-    pred_origin_logits: Tensor
+    input: DataForEvaluationInputs
+    explained_model_predicted_class: Tensor
+    explained_model_predicted_logits: Tensor
     k: float = 0.0

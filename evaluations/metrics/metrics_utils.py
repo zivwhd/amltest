@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 
 from config.config import ExpArgs
 from config.types_enums import EvalTokens
-from utils.dataclasses.evaluations import DataForEval
+from utils.dataclasses.evaluations import DataForEvaluation
 from utils.utils_functions import get_device, run_model, merge_prompts, is_model_encoder_only
 
 
@@ -23,9 +23,9 @@ class MetricsFunctions:
 
         self.labels_tokens = None
 
-    def log_odds(self, item_args: DataForEval):
+    def log_odds(self, item_args: DataForEvaluation):
         topk_indices, required_tokens = self.get_indices(item_args)
-        prob_original = torch.softmax(item_args.pred_origin_logits, dim = 0)
+        prob_original = torch.softmax(item_args.explained_model_predicted_logits, dim = 0)
 
         inputs = copy.deepcopy(item_args.input)
 
@@ -42,14 +42,14 @@ class MetricsFunctions:
         logits_perturbed = run_model(model = self.model, input_ids = inputs_ids.cuda(),
                                      attention_mask = attention_mask.cuda(), is_return_logits = True).squeeze()
         prob_perturbed = torch.softmax(logits_perturbed, dim = 0)
-        result = (torch.log(prob_perturbed[item_args.pred_origin]) - torch.log(
-            prob_original[item_args.pred_origin])).item()
+        result = (torch.log(prob_perturbed[item_args.explained_model_predicted_class]) - torch.log(
+            prob_original[item_args.explained_model_predicted_class])).item()
 
         return result
 
-    def sufficiency(self, item_args: DataForEval):
+    def sufficiency(self, item_args: DataForEvaluation):
         topk_indices, required_tokens = self.get_indices(item_args)
-        prob_original = torch.softmax(item_args.pred_origin_logits, dim = 0)
+        prob_original = torch.softmax(item_args.explained_model_predicted_logits, dim = 0)
 
         # if len(topk_indices) == 0:
         if topk_indices.shape[-1] == 0:
@@ -75,12 +75,12 @@ class MetricsFunctions:
                                      attention_mask = masked_attention_mask.cuda(), is_return_logits = True).squeeze()
         prob_perturbed = torch.softmax(logits_perturbed, dim = 0)
 
-        result = (prob_original[item_args.pred_origin] - prob_perturbed[item_args.pred_origin]).item()
+        result = (prob_original[item_args.explained_model_predicted_class] - prob_perturbed[item_args.explained_model_predicted_class]).item()
         return result
 
-    def comprehensiveness(self, item_args: DataForEval):
+    def comprehensiveness(self, item_args: DataForEvaluation):
         topk_indices, required_tokens = self.get_indices(item_args)
-        prob_original = torch.softmax(item_args.pred_origin_logits, dim = 0)
+        prob_original = torch.softmax(item_args.explained_model_predicted_logits, dim = 0)
 
         inputs = copy.deepcopy(item_args.input)
         mask = torch.ones_like(inputs.input_ids[0]).bool()
@@ -101,10 +101,10 @@ class MetricsFunctions:
                                      attention_mask = masked_attention_mask.cuda(), is_return_logits = True).squeeze()
         prob_perturbed = torch.softmax(logits_perturbed, dim = 0)
 
-        result = (prob_original[item_args.pred_origin] - prob_perturbed[item_args.pred_origin]).item()
+        result = (prob_original[item_args.explained_model_predicted_class] - prob_perturbed[item_args.explained_model_predicted_class]).item()
         return result
 
-    def get_indices(self, item_args: DataForEval) -> Tuple[Tensor, Tensor]:
+    def get_indices(self, item_args: DataForEvaluation) -> Tuple[Tensor, Tensor]:
         tokens_attr, n_attr, required_tokens = self.eval_tokens_handler(item_args)
         k = int(n_attr * item_args.k / 100)
         topk_indices = torch.topk(tokens_attr, k, sorted = False).indices
@@ -115,24 +115,14 @@ class MetricsFunctions:
                 raise ValueError(f"required_tokens souled not be in the topk_indices")
         return topk_indices, required_tokens
 
-    def eval_tokens_handler(self, item_args: DataForEval) -> Tuple[Tensor, Tensor, Union[Tensor, None]]:
+    def eval_tokens_handler(self, item_args: DataForEvaluation) -> Tuple[Tensor, Tensor, Union[Tensor, None]]:
         val = float('-inf')
         tokens_attr: Tensor = copy.deepcopy(item_args.tokens_attr)
         input_ids: Tensor = item_args.input.input_ids.squeeze()
         n_attr = tokens_attr.shape[-1]
         required_tokens = None
 
-        if ExpArgs.eval_tokens == EvalTokens.ALL_TOKENS.value:
-            return tokens_attr, n_attr, required_tokens
-        elif ExpArgs.eval_tokens == EvalTokens.NO_CLS.value:
-            if is_model_encoder_only():
-                tokens_attr[0] = val  # cls
-                n_attr = n_attr - 1  # cls
-                required_tokens = torch.tensor([0])  # cls
-            else:
-                raise ValueError("unsupported EvalTokens.NO_CLS.value for not encoders only models")
-            return tokens_attr, n_attr, required_tokens
-        elif ExpArgs.eval_tokens == EvalTokens.NO_SPECIAL_TOKENS.value:
+        if ExpArgs.eval_tokens == EvalTokens.NO_SPECIAL_TOKENS.value:
             indices = torch.isin(input_ids, self.special_tokens)
             if indices.sum() == 0:
                 return tokens_attr, n_attr, required_tokens
@@ -142,5 +132,15 @@ class MetricsFunctions:
                 required_tokens = required_tokens.unsqueeze(0)
             n_attr = n_attr - required_tokens.shape[-1]
             return tokens_attr, n_attr, required_tokens
+        # elif ExpArgs.eval_tokens == EvalTokens.ALL_TOKENS.value:
+        #     return tokens_attr, n_attr, required_tokens
+        # elif ExpArgs.eval_tokens == EvalTokens.NO_CLS.value:
+        #     if is_model_encoder_only():
+        #         tokens_attr[0] = val  # cls
+        #         n_attr = n_attr - 1  # cls
+        #         required_tokens = torch.tensor([0])  # cls
+        #     else:
+        #         raise ValueError("unsupported EvalTokens.NO_CLS.value for not encoders only models")
+        #     return tokens_attr, n_attr, required_tokens
         else:
             raise ValueError("unsupported ExpArgs.eval_tokens selected")

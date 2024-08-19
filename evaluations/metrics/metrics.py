@@ -8,21 +8,21 @@ from transformers import AutoTokenizer
 from config.config import ExpArgs, MetricsMetaData
 from config.types_enums import EvalMetric
 from evaluations.metrics.metrics_utils import MetricsFunctions
-from utils.dataclasses.evaluations import DataForEval
+from utils.dataclasses.evaluations import DataForEvaluation
 from utils.dataclasses.metric_results import MetricResults
-from utils.utils_functions import get_device
+from utils.utils_functions import get_device, get_model_special_tokens
 
 
 class Metrics:
 
-    def __init__(self, model, explained_tokenizer: AutoTokenizer, ref_token_id, data: DataForEval, item_index: str,
+    def __init__(self, model, explained_tokenizer: AutoTokenizer, ref_token_id, data: DataForEvaluation, item_index: str,
                  experiment_path: str):
         self.model = model
         self.explained_tokenizer = explained_tokenizer
         self.ref_token_id = ref_token_id
         self.device = get_device()
-        self.special_tokens = torch.tensor(self.explained_tokenizer.all_special_ids).to(self.device)
-        self.data: DataForEval = data
+        self.special_tokens = torch.tensor(get_model_special_tokens(ExpArgs.explained_model_backbone, self.explained_tokenizer)).to(self.device)
+        self.data: DataForEvaluation = data
         self.item_index = item_index
         self.experiment_path = experiment_path
         self.metric_functions = MetricsFunctions(model, explained_tokenizer, ref_token_id, self.special_tokens)
@@ -69,16 +69,10 @@ class Metrics:
                 results_item.to_csv(f, header = f.tell() == 0, index = False)
 
     def transform_results(self, metric_result):
-        gt_target = self.data.gt_target
-        if type(gt_target) == list:
-            if len(gt_target) != 1:
-                raise ValueError(f"update_results_df")
-            gt_target = gt_target[0]
-        gt_target = gt_target.item()
         res = MetricResults(item_index = self.item_index, task = ExpArgs.task.name, eval_metric = ExpArgs.eval_metric,
                             explained_model_backbone = ExpArgs.explained_model_backbone, metric_result = metric_result,
                             metric_steps_result = None, steps_k = self.pretu_steps,
                             attr_score_unction = ExpArgs.attr_score_function,
-                            model_pred_origin = self.data.pred_origin.squeeze().item(), gt_target = gt_target,
+                            model_pred_origin = self.data.explained_model_predicted_class.squeeze().item(),
                             eval_tokens = ExpArgs.eval_tokens)
         return pd.DataFrame([res])

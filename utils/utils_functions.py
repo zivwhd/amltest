@@ -29,6 +29,20 @@ def is_model_encoder_only(model = None):
 
     raise ValueError(f"unsupported model: {model}")
 
+def get_model_special_tokens(model, tokenizer):
+    if is_model_encoder_only(model):
+        return [  #
+            getattr(tokenizer, "cls_token_id"),  #
+            getattr(tokenizer, "pad_token_id"),  #
+            getattr(tokenizer, "sep_token_id")  #
+        ]
+    else:
+        return [  #
+            getattr(tokenizer, "bos_token_id"),  #
+            getattr(tokenizer, "pad_token_id"),  #
+            getattr(tokenizer, "eos_token_id")  #
+        ]
+
 
 def is_use_prompt():
     return (not is_model_encoder_only()) and (not ExpArgs.task.is_llm_use_lora)

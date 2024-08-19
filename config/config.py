@@ -14,7 +14,7 @@ class ExpArgs:
     attr_score_function: str = None
     validation_type = ValidationType.VAL.value
     labels_tokens_opt = None
-    eval_tokens = None
+    eval_tokens = EvalTokens.NO_SPECIAL_TOKENS.value
     is_evaluate = True
     is_save_times = False
     is_save_words = False

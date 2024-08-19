@@ -14,22 +14,20 @@ class ForwardModel(nn.Module):
 
     def forward(self, input_embed, attention_mask = None, position_embed = None, type_embed = None,
                 return_all_logits = False):
-        pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
-                         is_return_logits = True)
-        # if is_model_encoder_only():
-        #     embeds = input_embed
-        #     # embeds = input_embed + position_embed
-        #     # if type_embed is not None:
-        #     #     embeds += type_embed
-        #
-        #     # Get predictions
-        #     # embeds = getattr(self.model, self.model_name).embeddings.dropout(
-        #     #     getattr(self.model, self.model_name).embeddings.LayerNorm(embeds))
-        #     pred = run_model(model = self.model, inputs_embeds = embeds, attention_mask = attention_mask,
-        #                      is_return_logits = True)
-        # else:
-        #     pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
-        #                      is_return_logits = True)
+
+        if is_model_encoder_only():
+            embeds = input_embed + position_embed
+            if type_embed is not None:
+                embeds += type_embed
+
+            # Get predictions
+            embeds = getattr(self.model, self.model_name).embeddings.dropout(
+                getattr(self.model, self.model_name).embeddings.LayerNorm(embeds))
+            pred = run_model(model = self.model, inputs_embeds = embeds, attention_mask = attention_mask,
+                             is_return_logits = True)
+        else:
+            pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
+                             is_return_logits = True)
 
         # Return all logits or just maximum class
         if return_all_logits:
@@ -43,7 +41,6 @@ def construct_input_ref_pair(tokenizer, text, ref_token_id, sep_token_id, cls_to
                                 max_length = tokenizer.max_len_single_sentence, )
     input_ids = ([cls_token_id] + text_ids + [sep_token_id])  # construct input token ids
     ref_input_ids = ([cls_token_id] + [ref_token_id] * len(text_ids) + [sep_token_id])  # construct reference token ids
-    # ref_input_ids = ([ref_token_id] + [ref_token_id] * len(text_ids) + [ref_token_id])  # construct reference token ids
 
     return torch.tensor([input_ids], device = device), torch.tensor([ref_input_ids], device = device)
 

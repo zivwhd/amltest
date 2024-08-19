@@ -43,7 +43,7 @@ class GlobEncBaseline:
             # print("Single layer N-Enc token attribution:", norm_nenc.shape)
 
             # Aggregate and compute GlobEnc
-            globenc = AttentionRollout().compute_flows([norm_nenc], output_hidden_states=False)[-1]
+            globenc = AttentionRollout().compute_flows([norm_nenc], output_hidden_states=False)[0]
             globenc = np.array(globenc)
             # print("Aggregated N-Enc token attribution (GlobEnc):", globenc.shape)
-            return globenc.squeeze()[0]
+            return globenc
