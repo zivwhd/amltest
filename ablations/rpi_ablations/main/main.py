@@ -16,14 +16,14 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from config.config import BackbonesMetaData, ExpArgs
 from config.constants import TEXT_PROMPT, LABEL_PROMPT_NEW_LINE
-from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalTokens, EvalMetric
+from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, TokenEvaluationOptions, EvalMetric
 from utils.utils_functions import (run_model, get_device, is_model_encoder_only, merge_prompts, conv_to_word_embedding,
                                    is_use_prompt)
 
 import torch
 
 from captum.attr import (IntegratedGradients)
-from evaluations.evaluations import evaluate_tokens_attr
+from evaluations.evaluations import evaluate_tokens_attributions
 
 
 def get_alphas_from_timestamp(model, tsteps):
@@ -61,7 +61,7 @@ class Baselines:
         self.tokenizer = get_tokenizer(self.model_path)
         self.data = get_data()
         self.model_name = BackbonesMetaData.name[ExpArgs.explained_model_backbone]
-        ExpArgs.attr_score_function = attr_score_function
+        ExpArgs.attribution_scores_function = attr_score_function
 
         self.device = get_device()
         self.model = self.model.to(self.device)
@@ -76,7 +76,7 @@ class Baselines:
         self.task_prompt_attention_mask = None
         self.set_prompts()
 
-        if AttrScoreFunctions.llm.value == ExpArgs.attr_score_function:
+        if AttrScoreFunctions.llm.value == ExpArgs.attribution_scores_function:
             if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
                 model_path = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/INSTRUCT/meta-llama_Llama-2-7b-chat-hf"
             elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
@@ -98,7 +98,7 @@ class Baselines:
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
 
-            ExpArgs.labels_tokens_opt = torch.stack(labels_tokens).squeeze()[:, -1]
+            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
 
     def get_folder_name(self, metric: Enum):
         return f"{self.exp_path}/metric_{metric.value}"
@@ -140,18 +140,18 @@ class Baselines:
 
     def run(self):
 
-        if ExpArgs.attr_score_function == AttrScoreFunctions.decompX.value:
+        if ExpArgs.attribution_scores_function == AttrScoreFunctions.decompX.value:
             sys.path.append(f"{os.getcwd()}/../../main/utils/DecompX")
             from main.utils.decompX_utils import DecomposeXBaseline
-        elif ExpArgs.attr_score_function == AttrScoreFunctions.alti.value:
+        elif ExpArgs.attribution_scores_function == AttrScoreFunctions.alti.value:
             sys.path.append(f"{os.getcwd()}/../../main/utils/transformer-contributions/alti")
             from main.utils.alti_utils import AltiBaseline
-        elif (ExpArgs.attr_score_function == AttrScoreFunctions.glob_enc.value) or (
-                ExpArgs.attr_score_function == AttrScoreFunctions.glob_enc_dim_0.value):
+        elif (ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc.value) or (
+                ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc_dim_0.value):
             sys.path.append(f"{os.getcwd()}/../../main/utils/GlobEnc")
             from main.utils.globenc_utils import GlobEncBaseline
             self.glob_enc_baseline = GlobEncBaseline
-        elif ExpArgs.attr_score_function == AttrScoreFunctions.solvability.value:
+        elif ExpArgs.attribution_scores_function == AttrScoreFunctions.solvability.value:
             # sys.path.append(f"{os.getcwd()}/../../main/utils/solvability_explainer")
             if not is_model_encoder_only():
                 self.tokenizer.pad_token_id = self.tokenizer.unk_token_id
@@ -189,36 +189,36 @@ class Baselines:
 
             attr_scores = None
 
-            if AttrScoreFunctions.deep_lift.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.deep_lift.value == ExpArgs.attribution_scores_function:
                 explainer = DeepLift(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.gradient_shap.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.gradient_shap.value == ExpArgs.attribution_scores_function:
                 explainer = GradientShap(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = torch.cat([ref_input_embed, input_embed]),
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.lime.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.lime.value == ExpArgs.attribution_scores_function:
                 explainer = Lime(self.lime_func)
                 _attr = explainer.attribute(input_ids, target = pred_origin_logits.max(1)[1])
                 attr_scores = _attr.squeeze().detach()
 
-            if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attribution_scores_function:
                 explainer = InputXGradient(nn_forward_func)
                 _attr = explainer.attribute(input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.integrated_gradients.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.integrated_gradients.value == ExpArgs.attribution_scores_function:
                 explainer = IntegratedGradients(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attribution_scores_function:
                 explainer = SequentialIntegratedGradients(nn_forward_func)
 
                 n_steps = 50  # default value
@@ -233,11 +233,11 @@ class Baselines:
                 del explainer
                 del _attr
 
-            if AttrScoreFunctions.decompX.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.decompX.value == ExpArgs.attribution_scores_function:
                 decompse = DecomposeXBaseline(self.model_path)
                 attr_scores = decompse.compute_attr(input_ids, attention_mask)
 
-            if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.alti.value == ExpArgs.attribution_scores_function:
                 alti_input_ids, alti_attention_mask = input_ids.clone(), attention_mask.clone()
                 origin_model_max_length = self.tokenizer.model_max_length
                 if (not is_model_encoder_only()) and (self.task.name in [IMDB_TASK.name, AGN_TASK.name]):
@@ -257,7 +257,7 @@ class Baselines:
             torch.cuda.empty_cache()
 
             eval_attr_score = attr_scores
-            if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attr_score_function):
+            if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attribution_scores_function):
                 # print(f"before prompt - eval_attr_score.shape: {eval_attr_score.shape}")
                 eval_attr_score = attr_scores[
                                   self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[-1]].detach()
@@ -269,7 +269,7 @@ class Baselines:
                 print("\n\n" + "^" * 100)
             for metric in self.metrics:
                 experiment_path = self.get_folder_name(metric)
-                ExpArgs.eval_metric = metric.value
+                ExpArgs.evaluation_metric = metric.value
 
                 data_for_eval: DataForEvaluation = DataForEvaluation(  #
                     tokens_attr = eval_attr_score.detach(),  #
@@ -284,10 +284,10 @@ class Baselines:
                     explained_model_predicted_class = model_pred_origin.squeeze(),  #
                     explained_model_predicted_logits = pred_origin_logits.squeeze())
 
-                metric_result, metric_result_item = evaluate_tokens_attr(self.model, self.tokenizer, self.ref_token,
-                                                                         data = data_for_eval,
-                                                                         experiment_path = experiment_path,
-                                                                         item_index = f"{i}_{item_id}", )
+                metric_result, metric_result_item = evaluate_tokens_attributions(self.model, self.tokenizer, self.ref_token,
+                                                                                 data = data_for_eval,
+                                                                                 experiment_path = experiment_path,
+                                                                                 item_index = f"{i}_{item_id}", )
 
             gc.collect()
             torch.cuda.empty_cache()

@@ -1,12 +1,4 @@
-from config.config import ExpArgsDefault, ExpArgs
 from config.tasks import IMDB_TASK, EMOTION_TASK, SST_TASK, AGN_TASK, RTN_TASK
-
-
-def reset_conf():
-    for k, v in vars(ExpArgsDefault).items():
-        if "__" not in k:
-            setattr(ExpArgs, k, v)
-
 
 def get_task(task_name):
     if task_name == IMDB_TASK.name:

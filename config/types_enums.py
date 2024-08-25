@@ -63,7 +63,7 @@ class AttrScoreFunctions(Enum):
     solvability = "solvability"
 
 
-class EvalTokens(Enum):
+class TokenEvaluationOptions(Enum):
     # ALL_TOKENS = 'ALL_TOKENS'
     # NO_CLS = 'NO_CLS'
     NO_SPECIAL_TOKENS = 'NO_SPECIAL_TOKENS'

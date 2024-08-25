@@ -23,7 +23,7 @@ ExpArgs.explained_model_backbone = arg_explained_model_backbone
 
 ExpArgs.ref_token_name = RefTokenNameTypes.MASK.value if is_model_encoder_only() else RefTokenNameTypes.UNK.value
 ExpArgs.BEAM_SIZE = int(arg_solvex_beam_size)
-ExpArgs.eval_metric = arg_metric
+ExpArgs.evaluation_metric = arg_metric
 
 data = load_jsonl(
     f"/home/yonatanto/work/theza/EMNLP_EXPLAINABILITY/earaser_data/postprocess_movies_data/{arg_set_type}.jsonl")

@@ -12,6 +12,7 @@ IMDB_TASK: Task = Task(  #
     labels_str_int_maps = dict(negative = 0, positive = 1),  #
     test_sample = 2_000,  #
     name = "imdb",  #
+    paper_name = "IMDB",  #
     is_llm_set_max_len = True,  #
     llm_explained_tokenizer_max_length = 400,  #
     llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",  #
@@ -51,6 +52,7 @@ EMOTION_TASK: Task = Task(dataset_name = "emotion",  #
                           #
                           test_sample = None,  #
                           name = "emotions",  #
+                          paper_name = "EMR",
                           llm_task_prompt = "Classify the emotion expressed in each sentences. for each sentence the label is sadness (0) or joy (1) or love (2) or anger (3) or fear (4) or surprise (5)",
                           llm_few_shots_prompt = [('i feel when seeing a child suffering this way', 0),  #
                                                   ('im feeling a little overwhelmed here recently', 5),  #
@@ -87,6 +89,7 @@ SST_TASK: Task = Task(dataset_name = "sst2",  #
                       labels_str_int_maps = dict(n = 0, p = 1),  #
                       test_sample = None,  #
                       name = "sst",  #
+                      paper_name = "SST2",  #
                       llm_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
                       llm_few_shots_prompt = [("hide new secretions from the parental units", 0),
                                               ("the greatest musicians", 1),  #
@@ -107,6 +110,7 @@ AGN_TASK: Task = Task(dataset_name = "ag_news",  #
                       distilbert_fine_tuned_model = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/agn_distillbert",
                       labels_str_int_maps = dict(world = 0, sports = 1, business = 2, sci_tech = 3),
                       test_sample = 2_000, name = "agn",  #
+                      paper_name = "AGN",
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
                       llama_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/LLAMA_agn_is_bf16_True_is_use_prompt_False",
@@ -162,6 +166,7 @@ RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes",  #
                       distilbert_fine_tuned_model = "textattack/distilbert-base-uncased-rotten-tomatoes",
                       labels_str_int_maps = dict(negative = 0, positive = 1), test_sample = None,  #
                       name = "rtn",  #
+                      paper_name = "RTN",  #
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
                       is_finetuned_with_lora = False,

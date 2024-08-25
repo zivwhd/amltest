@@ -5,22 +5,20 @@ from utils.dataclasses import Task
 class ExpArgs:
     seed = 42
     default_root_dir = "OUT"
-    ref_token_name: RefTokenNameTypes = RefTokenNameTypes.MASK.value
-    eval_metric: str = None
+    ref_token_name: RefTokenNameTypes = None
+    evaluation_metric: str = None
     is_save_support_results = True
     is_save_results = True
     task: Task = None
     explained_model_backbone: str = None
-    attr_score_function: str = None
-    validation_type = ValidationType.VAL.value
-    labels_tokens_opt = None
-    eval_tokens = EvalTokens.NO_SPECIAL_TOKENS.value
+    attribution_scores_function: str = None
+    label_vocab_tokens = None
+    token_evaluation_option = TokenEvaluationOptions.NO_SPECIAL_TOKENS.value
     is_evaluate = True
     is_save_times = False
     is_save_words = False
 
 
-ExpArgsDefault = type('ClonedExpArgs', (), vars(ExpArgs).copy())
 
 
 class MetricsMetaData:

@@ -11,7 +11,7 @@ import pandas as pd
 from torch import Tensor
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from config.tasks import IMDB_TASK, AGN_TASK, SST_TASK, EMOTION_TASK, RTN_TASK
+from config.tasks import IMDB_TASK, AGN_TASK
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
 from main.utils.seg_ig import SequentialIntegratedGradients
@@ -20,16 +20,15 @@ from utils.dataclasses.evaluations import DataForEvaluation, DataForEvaluationIn
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from config.config import BackbonesMetaData, ExpArgs
-from config.constants import (TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LLM_EXP_PROMPT, LABEL_PROMPT, LOCAL_MODELS_PREFIX,
-                              HF_CACHE)
-from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalTokens, EvalMetric, ModelBackboneTypes
+from config.constants import (TEXT_PROMPT, LABEL_PROMPT_NEW_LINE, LOCAL_MODELS_PREFIX, HF_CACHE)
+from config.types_enums import RefTokenNameTypes, AttrScoreFunctions, EvalMetric, ModelBackboneTypes
 from utils.utils_functions import (run_model, get_device, is_model_encoder_only, merge_prompts, conv_to_word_embedding,
                                    is_use_prompt)
 
 import torch
 
 from captum.attr import (DeepLift, GradientShap, InputXGradient, IntegratedGradients, Lime)
-from evaluations.evaluations import evaluate_tokens_attr
+from evaluations.evaluations import evaluate_tokens_attributions
 
 
 def summarize_attributions(attributions, sum_dim = -1):
@@ -50,7 +49,7 @@ class Baselines:
         self.tokenizer = get_tokenizer(self.model_path)
         self.data = get_data()
         self.model_name = BackbonesMetaData.name[ExpArgs.explained_model_backbone]
-        ExpArgs.attr_score_function = attr_score_function
+        ExpArgs.attribution_scores_function = attr_score_function
 
         self.glob_enc = None
 
@@ -67,7 +66,7 @@ class Baselines:
         self.task_prompt_attention_mask = None
         self.set_prompts()
 
-        if AttrScoreFunctions.llm.value == ExpArgs.attr_score_function:
+        if AttrScoreFunctions.llm.value == ExpArgs.attribution_scores_function:
             if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
                 model_path = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/INSTRUCT/meta-llama_Llama-2-7b-chat-hf"
             elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
@@ -89,7 +88,7 @@ class Baselines:
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
 
-            ExpArgs.labels_tokens_opt = torch.stack(labels_tokens).squeeze()[:, -1]
+            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
 
     def get_folder_name(self, metric: Enum):
         return f"{self.exp_path}/metric_{metric.value}"
@@ -105,26 +104,26 @@ class Baselines:
             raise NotImplementedError
 
         if not is_model_encoder_only():
-            self.tokenizer.pad_token_id = self.ref_token
-            self.model.config.pad_token_id = self.ref_token
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+            self.model.config.pad_token_id = self.tokenizer.eos_token_id
 
     def run(self):
 
-        if ExpArgs.attr_score_function == AttrScoreFunctions.decompX.value:
+        if ExpArgs.attribution_scores_function == AttrScoreFunctions.decompX.value:
             sys.path.append(f"{os.getcwd()}/../../main/utils/DecompX")
             from main.utils.decompX_utils import DecomposeXBaseline
-        elif ExpArgs.attr_score_function == AttrScoreFunctions.decompX_class.value:
+        elif ExpArgs.attribution_scores_function == AttrScoreFunctions.decompX_class.value:
             sys.path.append(f"{os.getcwd()}/../../main/utils/DecompX")
             from main.utils.decompX_utils_class import DecomposeXBaseline
-        elif ExpArgs.attr_score_function == AttrScoreFunctions.alti.value:
+        elif ExpArgs.attribution_scores_function == AttrScoreFunctions.alti.value:
             sys.path.append(f"{os.getcwd()}/../../main/utils/transformer-contributions/alti")
             from main.utils.alti_utils import AltiBaseline
-        elif (ExpArgs.attr_score_function == AttrScoreFunctions.glob_enc.value) or (
-                ExpArgs.attr_score_function == AttrScoreFunctions.glob_enc_dim_0.value):
+        elif (ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc.value) or (
+                ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc_dim_0.value):
             sys.path.append(f"{os.getcwd()}/../../main/utils/GlobEnc")
             from main.utils.globenc_utils import GlobEncBaseline
             self.glob_enc_baseline = GlobEncBaseline
-        elif ExpArgs.attr_score_function == AttrScoreFunctions.solvability.value:
+        elif ExpArgs.attribution_scores_function == AttrScoreFunctions.solvability.value:
             # sys.path.append(f"{os.getcwd()}/../../main/utils/solvability_explainer")
             if not is_model_encoder_only():
                 self.tokenizer.pad_token_id = self.tokenizer.unk_token_id
@@ -143,7 +142,6 @@ class Baselines:
         times = []
         for i, row in enumerate(self.data):
             item_id = row[2]
-            label = row[1]
             txt = row[0]
             (origin_input_ids, origin_ref_input_ids, origin_input_embed, origin_ref_input_embed, position_embed,
              ref_position_embed, type_embed, ref_type_embed, origin_attention_mask) = get_inputs(
@@ -156,45 +154,45 @@ class Baselines:
             ref_input_embed, _ = self.merge_prompts_embeddings__handler(origin_ref_input_embed.clone(), attention_mask)
 
             with torch.no_grad():
-                pred_origin_logits = run_model(model = self.model, input_ids = input_ids,
-                                               attention_mask = attention_mask, is_return_logits = True)
-                model_pred_origin = torch.argmax(pred_origin_logits, dim = 1)
+                explained_model_logits = run_model(model = self.model, input_ids = input_ids,
+                                                   attention_mask = attention_mask, is_return_logits = True)
+                explained_model_predicted_class = torch.argmax(explained_model_logits, dim = 1)
             self.model.zero_grad()
 
             begin = time.time()
 
-            attr_scores = None
+            attribution_scores = None
 
-            if AttrScoreFunctions.deep_lift.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.deep_lift.value:
                 explainer = DeepLift(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
-                attr_scores = summarize_attributions(_attr)
+                attribution_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.gradient_shap.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.gradient_shap.value:
                 explainer = GradientShap(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = torch.cat([ref_input_embed, input_embed]),
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
-                attr_scores = summarize_attributions(_attr)
+                attribution_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.lime.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.lime.value:
                 explainer = Lime(self.lime_func)
-                _attr = explainer.attribute(input_ids, target = pred_origin_logits.max(1)[1])
-                attr_scores = _attr.squeeze().detach()
+                _attr = explainer.attribute(input_ids, target = explained_model_logits.max(1)[1])
+                attribution_scores = _attr.squeeze().detach()
 
-            if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.input_x_gradient.value:
                 explainer = InputXGradient(nn_forward_func)
                 _attr = explainer.attribute(input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
-                attr_scores = summarize_attributions(_attr)
+                attribution_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.integrated_gradients.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.integrated_gradients.value:
                 explainer = IntegratedGradients(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
-                attr_scores = summarize_attributions(_attr)
+                attribution_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.sequential_integrated_gradients.value:
                 explainer = SequentialIntegratedGradients(nn_forward_func)
 
                 n_steps = 50  # default value
@@ -204,47 +202,39 @@ class Baselines:
                         n_steps = 4
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed, n_steps = n_steps,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
-                attr_scores = summarize_attributions(_attr).detach()
+                attribution_scores = summarize_attributions(_attr).detach()
 
                 del explainer
                 del _attr
 
-            if AttrScoreFunctions.decompX.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.decompX.value:
                 decompse = DecomposeXBaseline(self.model_path)
-                attr_scores = decompse.compute_attr(input_ids, attention_mask)
-                attr_scores = torch.tensor(attr_scores)
+                attribution_scores = decompse.compute_attr(input_ids, attention_mask)
+                attribution_scores = torch.tensor(attribution_scores)
 
-            if AttrScoreFunctions.decompX_class.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.decompX_class.value:
                 decompse = DecomposeXBaseline(self.model_path)
-                attr_scores = decompse.compute_attr(input_ids, attention_mask, model_pred_origin)
-                attr_scores = torch.tensor(attr_scores)
+                attribution_scores = decompse.compute_attr(input_ids, attention_mask, explained_model_predicted_class)
+                attribution_scores = torch.tensor(attribution_scores)
 
-            if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.alti.value:
                 alti_input_ids, alti_attention_mask = input_ids.clone(), attention_mask.clone()
                 origin_model_max_length = self.tokenizer.model_max_length
                 if (not is_model_encoder_only()) and (self.task.name in [IMDB_TASK.name, AGN_TASK.name]):
                     alti_input_ids, alti_attention_mask = self.get_alti_input(txt)
 
                 alti = AltiBaseline(self.model)
-                attr_scores = alti.compute_attr(alti_input_ids, alti_attention_mask)
-                # attr_scores = summarize_attributions(_attr, sum_dim = 0).detach()
+                attribution_scores = alti.compute_attr(alti_input_ids, alti_attention_mask)
 
                 del alti
-                # del _attr
 
                 if origin_model_max_length != self.tokenizer.model_max_length:
                     self.tokenizer.model_max_length = origin_model_max_length
 
-            if AttrScoreFunctions.glob_enc.value == ExpArgs.attr_score_function:
-                attr_scores = self.run_glob_enc(txt, input_ids,
-                                                attention_mask)  # attr_scores = summarize_attributions(_attr)
+            if AttrScoreFunctions.glob_enc.value:
+                attribution_scores = self.run_glob_enc(txt, input_ids, attention_mask)
 
-            # if AttrScoreFunctions.glob_enc_dim_0.value == ExpArgs.attr_score_function:
-            #     _attr = self.run_glob_enc(txt, input_ids, attention_mask)
-            #     attr_scores = summarize_attributions(_attr.squeeze(), sum_dim = 0)
-
-            if AttrScoreFunctions.solvability.value == ExpArgs.attr_score_function:
-                # sentence = self.tokenizer.tokenize(txt, add_special_tokens = True)
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.solvability.value:
                 sentence = [self.tokenizer.convert_ids_to_tokens(i) for i in input_ids.squeeze().tolist()]
 
                 if len(self.metrics) != 1:
@@ -266,10 +256,10 @@ class Baselines:
                 explainer = BeamSearchExplainer(masker, f = self.solvability_func,
                                                 beam_size = ExpArgs.SOLVABILITY_BATCH_SIZE, batch_size = 50,
                                                 metric = metric)
-                e = explainer.explain_instance(sentence, label = model_pred_origin.squeeze().item())
-                attr_scores = torch.tensor(e["exp"])
+                e = explainer.explain_instance(sentence, label = explained_model_predicted_class.squeeze().item())
+                attribution_scores = torch.tensor(e["exp"])
 
-            if AttrScoreFunctions.llm.value == ExpArgs.attr_score_function:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.llm.value:
                 self.model = self.model.to("cpu")
                 gc.collect()
                 torch.cuda.empty_cache()
@@ -305,45 +295,45 @@ class Baselines:
                         print(f"text-{txt}", flush = True)
                         print(f"keywords-{keywords}", flush = True)
                         origin_input_ids_squeezed = origin_input_ids.squeeze()
-                        attr_scores = torch.zeros_like(origin_input_ids, dtype = torch.float64).squeeze()
+                        attribution_scores = torch.zeros_like(origin_input_ids, dtype = torch.float64).squeeze()
                         if len(keywords) > 0:
                             for idx_k, k in enumerate(keywords):
                                 try:
                                     for token in self.tokenizer.encode(k, add_special_tokens = False):
                                         indices = torch.nonzero(torch.eq(origin_input_ids_squeezed, token)).squeeze()
                                         try:
-                                            attr_scores[indices] += 1 - (idx_k / len(keywords))
+                                            attribution_scores[indices] += 1 - (idx_k / len(keywords))
                                         except Exception as e2:
                                             print(f"issue - indices - {indices}. e2: {e2}", flush = True)
                                 except Exception as e1:
                                     print(f"issue - for token in self.tokenizer.encode - {e1}", flush = True)
 
-                        print(f"attr_scores-{attr_scores}", flush = True)
+                        print(f"attribution_scores-{attribution_scores}", flush = True)
                 except Exception as e:
                     print("ERR - {e}", flush = True)
-                    attr_scores = torch.ones_like(origin_input_ids.squeeze(), dtype = torch.float64)
+                    attribution_scores = torch.ones_like(origin_input_ids.squeeze(), dtype = torch.float64)
                 self.instruct_model = self.instruct_model.to("cpu")
                 gc.collect()
                 torch.cuda.empty_cache()
                 self.model = self.model.to("cuda")
 
-            if attr_scores is None:
-                raise ValueError("attr_scores score can not be none")
+            if attribution_scores is None:
+                raise ValueError("attribution_scores score can not be none")
 
             gc.collect()
             torch.cuda.empty_cache()
 
-            eval_attr_score = attr_scores
+            eval_attr_score = attribution_scores
 
             if ExpArgs.is_evaluate:
-                if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attr_score_function):
-                    eval_attr_score = attr_scores[
+                if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attribution_scores_function):
+                    eval_attr_score = attribution_scores[
                                       self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[
                                           -1]].detach()
 
                 for metric in self.metrics:
                     experiment_path = self.get_folder_name(metric)
-                    ExpArgs.eval_metric = metric.value
+                    ExpArgs.evaluation_metric = metric.value
 
                     data_for_eval: DataForEvaluation = DataForEvaluation(  #
                         tokens_attr = eval_attr_score.detach(),  #
@@ -355,13 +345,14 @@ class Baselines:
                             task_prompt_attention_mask = self.task_prompt_attention_mask,  #
                             label_prompt_attention_mask = self.label_prompt_attention_mask  #
                         ),  #
-                        explained_model_predicted_class = model_pred_origin.squeeze(),  #
-                        explained_model_predicted_logits = pred_origin_logits.squeeze())
+                        explained_model_predicted_class = explained_model_predicted_class.squeeze(),  #
+                        explained_model_predicted_logits = explained_model_logits.squeeze())
 
-                    evaluation_result, evaluation_item = evaluate_tokens_attr(self.model, self.tokenizer,
-                                                                              self.ref_token, data = data_for_eval,
-                                                                              experiment_path = experiment_path,
-                                                                              item_index = f"{i}_{item_id}")
+                    evaluation_result, evaluation_item = evaluate_tokens_attributions(self.model, self.tokenizer,
+                                                                                      self.ref_token,
+                                                                                      data = data_for_eval,
+                                                                                      experiment_path = experiment_path,
+                                                                                      item_index = f"{i}_{item_id}")
 
                     gc.collect()
                     torch.cuda.empty_cache()

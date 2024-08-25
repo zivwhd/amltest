@@ -35,6 +35,8 @@ class ForwardModel(nn.Module):
         if return_all_logits:
             return pred
         else:
+            if pred.ndim != 2:
+                raise ValueError("Unsupported input shape")
             return pred.max(1).values
 
 
@@ -157,7 +159,7 @@ def get_inputs_llm(tokenizer, model, model_name, ref_token, text, device):
     ref_token_id = ref_token
     # sep_token_id = tokenizer.encode(tokenizer.special_tokens_map["eos_token"])[0]
 
-    if ExpArgs.task.is_llm_use_lora:
+    if ExpArgs.task.is_finetuned_with_lora:
         text_ids = tokenizer.encode(text, add_special_tokens = True, truncation = True)
     else:
         text_ids = tokenizer.encode(text, add_special_tokens = False, truncation = True)

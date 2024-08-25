@@ -45,7 +45,7 @@ def get_model_special_tokens(model, tokenizer):
 
 
 def is_use_prompt():
-    return (not is_model_encoder_only()) and (not ExpArgs.task.is_llm_use_lora)
+    return (not is_model_encoder_only()) and (not ExpArgs.task.is_finetuned_with_lora)
 
 
 def calculate_num_of_trainable_params(model) -> int:
@@ -82,8 +82,8 @@ def run_model(model, input_ids: Tensor = None, attention_mask: Tensor = None, in
         else:
             logits = model(input_ids = input_ids, attention_mask = attention_mask).logits
 
-        if not ExpArgs.task.is_llm_use_lora:
-            logits = logits[:, -1, :][:, ExpArgs.labels_tokens_opt]
+        if not ExpArgs.task.is_finetuned_with_lora:
+            logits = logits[:, -1, :][:, ExpArgs.label_vocab_tokens]
 
     if is_return_logits:
         return logits

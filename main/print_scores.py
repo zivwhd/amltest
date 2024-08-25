@@ -71,7 +71,7 @@ class ScoresBaselines:
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
 
-            ExpArgs.labels_tokens_opt = torch.stack(labels_tokens).squeeze()[:, -1]
+            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
 
     def get_folder_name(self, metric: Enum):
         return f"{self.exp_path}/metric_{metric.value}"
@@ -128,7 +128,7 @@ class ScoresBaselines:
             pd.DataFrame(df_data).to_pickle(f"./{self.task.name}_{time_str}.pkl")
 
             for attr_score_function in self.attr_score_functions:
-                ExpArgs.attr_score_function = attr_score_function
+                ExpArgs.attribution_scores_function = attr_score_function
                 item_id = row[2]
                 label = row[1]
                 txt = row[0]
@@ -151,37 +151,37 @@ class ScoresBaselines:
 
                 attr_scores = None
 
-                if AttrScoreFunctions.deep_lift.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.deep_lift.value == ExpArgs.attribution_scores_function:
                     explainer = DeepLift(nn_forward_func)
                     _attr = explainer.attribute(input_embed, baselines = ref_input_embed, additional_forward_args = (
                         attention_mask, position_embed, type_embed,), )
                     attr_scores = summarize_attributions(_attr)
 
-                if AttrScoreFunctions.gradient_shap.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.gradient_shap.value == ExpArgs.attribution_scores_function:
                     explainer = GradientShap(nn_forward_func)
                     _attr = explainer.attribute(input_embed, baselines = torch.cat([ref_input_embed, input_embed]),
                                                 additional_forward_args = (
                                                     attention_mask, position_embed, type_embed,), )
                     attr_scores = summarize_attributions(_attr)
 
-                if AttrScoreFunctions.lime.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.lime.value == ExpArgs.attribution_scores_function:
                     explainer = Lime(self.lime_func)
                     _attr = explainer.attribute(input_ids, target = pred_origin_logits.max(1)[1])
                     attr_scores = _attr.squeeze().detach()
 
-                if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attribution_scores_function:
                     explainer = InputXGradient(nn_forward_func)
                     _attr = explainer.attribute(input_embed, additional_forward_args = (
                         attention_mask, position_embed, type_embed,), )
                     attr_scores = summarize_attributions(_attr)
 
-                if AttrScoreFunctions.integrated_gradients.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.integrated_gradients.value == ExpArgs.attribution_scores_function:
                     explainer = IntegratedGradients(nn_forward_func)
                     _attr = explainer.attribute(input_embed, baselines = ref_input_embed, additional_forward_args = (
                         attention_mask, position_embed, type_embed,), )
                     attr_scores = summarize_attributions(_attr)
 
-                if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attribution_scores_function:
                     explainer = SequentialIntegratedGradients(nn_forward_func)
 
                     n_steps = 50  # default value
@@ -197,11 +197,11 @@ class ScoresBaselines:
                     del explainer
                     del _attr
 
-                if AttrScoreFunctions.decompX.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.decompX.value == ExpArgs.attribution_scores_function:
                     decompse = DecomposeXBaseline(self.model_path)
                     attr_scores = decompse.compute_attr(input_ids, attention_mask)
 
-                if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.alti.value == ExpArgs.attribution_scores_function:
                     alti_input_ids, alti_attention_mask = input_ids.clone(), attention_mask.clone()
                     origin_model_max_length = self.tokenizer.model_max_length
                     if (not is_model_encoder_only()) and (self.task.name in [IMDB_TASK.name, AGN_TASK.name]):
@@ -217,15 +217,15 @@ class ScoresBaselines:
                     if origin_model_max_length != self.tokenizer.model_max_length:
                         self.tokenizer.model_max_length = origin_model_max_length
 
-                if AttrScoreFunctions.glob_enc.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.glob_enc.value == ExpArgs.attribution_scores_function:
                     _attr = self.run_glob_enc(txt, input_ids, attention_mask)
                     attr_scores = summarize_attributions(_attr)
 
-                if AttrScoreFunctions.glob_enc_dim_0.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.glob_enc_dim_0.value == ExpArgs.attribution_scores_function:
                     _attr = self.run_glob_enc(txt, input_ids, attention_mask)
                     attr_scores = summarize_attributions(_attr.squeeze(), sum_dim = 0)
 
-                if AttrScoreFunctions.llm.value == ExpArgs.attr_score_function:
+                if AttrScoreFunctions.llm.value == ExpArgs.attribution_scores_function:
                     self.model = self.model.to("cpu")
                     gc.collect()
                     torch.cuda.empty_cache()
@@ -297,7 +297,7 @@ class ScoresBaselines:
                              input_ids.squeeze()[attr_scores.topk(min(attr_scores.shape[-1]-1, 10)).indices.unsqueeze(0).tolist()].tolist()]
                 df_data[-1][attr_score_function] = top_items
 
-                print(f"{ExpArgs.attr_score_function} - {top_items}")
+                print(f"{ExpArgs.attribution_scores_function} - {top_items}")
 
     def encode(self, new_txt, is_add_special_tokens):
         tokenized = self.tokenizer.encode_plus(new_txt, truncation = True, add_special_tokens = is_add_special_tokens,

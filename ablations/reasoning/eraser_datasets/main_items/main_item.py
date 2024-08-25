@@ -33,7 +33,7 @@ class BaselinesItem:
         self.model, self.model_path = get_model()
         self.tokenizer = get_tokenizer(self.model_path)
         self.model_name = BackbonesMetaData.name[ExpArgs.explained_model_backbone]
-        ExpArgs.attr_score_function = attr_score_function
+        ExpArgs.attribution_scores_function = attr_score_function
         self.glob_enc = None
 
         self.output_path = "./OUTPUT"
@@ -66,18 +66,18 @@ class BaselinesItem:
 
     def run(self):
 
-        if ExpArgs.attr_score_function == AttrScoreFunctions.decompX.value:
+        if ExpArgs.attribution_scores_function == AttrScoreFunctions.decompX.value:
             sys.path.append(f"{os.getcwd()}/../main/utils/DecompX")
             from main.utils.decompX_utils import DecomposeXBaseline
-        elif ExpArgs.attr_score_function == AttrScoreFunctions.alti.value:
+        elif ExpArgs.attribution_scores_function == AttrScoreFunctions.alti.value:
             sys.path.append(f"{os.getcwd()}/../main/utils/transformer-contributions/alti")
             from main.utils.alti_utils import AltiBaseline
-        elif (ExpArgs.attr_score_function == AttrScoreFunctions.glob_enc.value) or (
-                ExpArgs.attr_score_function == AttrScoreFunctions.glob_enc_dim_0.value):
+        elif (ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc.value) or (
+                ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc_dim_0.value):
             sys.path.append(f"{os.getcwd()}/../main/utils/GlobEnc")
             from main.utils.globenc_utils import GlobEncBaseline
             self.glob_enc_baseline = GlobEncBaseline
-        elif ExpArgs.attr_score_function == AttrScoreFunctions.solvability.value:
+        elif ExpArgs.attribution_scores_function == AttrScoreFunctions.solvability.value:
             sys.path.append(f"{os.getcwd()}/../main/utils/solvability-explainer")
             if not is_model_encoder_only():
                 self.tokenizer.pad_token_id = self.tokenizer.unk_token_id
@@ -107,59 +107,59 @@ class BaselinesItem:
 
             attr_scores = None
 
-            if AttrScoreFunctions.deep_lift.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.deep_lift.value == ExpArgs.attribution_scores_function:
                 explainer = DeepLift(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.gradient_shap.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.gradient_shap.value == ExpArgs.attribution_scores_function:
                 explainer = GradientShap(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = torch.cat([ref_input_embed, input_embed]),
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.lime.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.lime.value == ExpArgs.attribution_scores_function:
                 explainer = Lime(self.lime_func)
                 _attr = explainer.attribute(input_ids)
                 attr_scores = _attr.squeeze().detach()
 
-            if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.input_x_gradient.value == ExpArgs.attribution_scores_function:
                 explainer = InputXGradient(nn_forward_func)
                 _attr = explainer.attribute(input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.integrated_gradients.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.integrated_gradients.value == ExpArgs.attribution_scores_function:
                 explainer = IntegratedGradients(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.sequential_integrated_gradients.value == ExpArgs.attribution_scores_function:
                 explainer = SequentialIntegratedGradients(nn_forward_func)
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.decompX.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.decompX.value == ExpArgs.attribution_scores_function:
                 decompse = DecomposeXBaseline(self.model_path)
                 attr_scores = decompse.compute_attr(input_ids, attention_mask)
 
-            if AttrScoreFunctions.alti.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.alti.value == ExpArgs.attribution_scores_function:
                 alti = AltiBaseline(self.model)
                 _attr = alti.compute_attr(input_ids, attention_mask)
                 attr_scores = summarize_attributions(_attr, sum_dim = 0)
 
-            if AttrScoreFunctions.glob_enc.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.glob_enc.value == ExpArgs.attribution_scores_function:
                 _attr = self.run_glob_enc(txt, input_ids, attention_mask)
                 attr_scores = summarize_attributions(_attr)
 
-            if AttrScoreFunctions.glob_enc_dim_0.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.glob_enc_dim_0.value == ExpArgs.attribution_scores_function:
                 _attr = self.run_glob_enc(txt, input_ids, attention_mask)
                 attr_scores = summarize_attributions(_attr.squeeze(), sum_dim = 0)
 
-            if AttrScoreFunctions.solvability.value == ExpArgs.attr_score_function:
+            if AttrScoreFunctions.solvability.value == ExpArgs.attribution_scores_function:
                 # sentence = self.tokenizer.tokenize(txt, add_special_tokens = True)
                 sentence = [self.tokenizer.convert_ids_to_tokens(i) for i in input_ids.squeeze().tolist()]
 
@@ -173,7 +173,7 @@ class BaselinesItem:
             to_save["attr_scores"] = attr_scores.detach().cpu()
             all_data.append(dict(to_save))
 
-            with open(f"{self.output_path}/{ExpArgs.attr_score_function}", 'wb') as f:
+            with open(f"{self.output_path}/{ExpArgs.attribution_scores_function}", 'wb') as f:
                 pickle.dump(all_data, f)
 
 

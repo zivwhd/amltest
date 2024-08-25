@@ -51,7 +51,7 @@ def get_model():
     elif ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
         from transformers import LlamaForCausalLM, LlamaForSequenceClassification
         model_path = task.llama_model
-        if task.is_llm_use_lora:
+        if task.is_finetuned_with_lora:
             model = LlamaForSequenceClassification.from_pretrained(model_path, torch_dtype = torch.bfloat16,
                                                                    cache_dir = HF_CACHE,
                                                                    num_labels = len(task.labels_int_str_maps.keys()))
@@ -63,7 +63,7 @@ def get_model():
     elif ExpArgs.explained_model_backbone == ModelBackboneTypes.MISTRAL.value:
         from transformers import MistralForCausalLM, MistralForSequenceClassification
         model_path = task.mistral_model
-        if task.is_llm_use_lora:
+        if task.is_finetuned_with_lora:
             model = MistralForSequenceClassification.from_pretrained(model_path, torch_dtype = torch.bfloat16,
                                                                      cache_dir = HF_CACHE,
                                                                      num_labels = len(task.labels_int_str_maps.keys()))

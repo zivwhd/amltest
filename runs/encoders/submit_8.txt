@@ -1,0 +1,38 @@
+#!/bin/bash
+
+## resource allocation
+#SBATCH --job-name=BL_8_
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
+
+#SBATCH --qos=gpu
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=30g
+#SBATCH --gpus=1
+#SBATCH --nodelist=gpu7
+
+#SBATCH --no-requeue
+
+
+## modules and apps
+module load anaconda3
+source activate NEEA_2
+
+## run
+python run_baselines.py sst solvability ROBERTA SUFFICIENCY 10
+python run_baselines.py sst solvability ROBERTA COMPREHENSIVENESS 10
+python run_baselines.py sst solvability ROBERTA EVAL_LOG_ODDS 10
+python run_baselines.py sst solvability ROBERTA AOPC_SUFFICIENCY 10
+python run_baselines.py sst solvability ROBERTA AOPC_COMPREHENSIVENESS 10
+python run_baselines.py sst solvability ROBERTA SUFFICIENCY 50
+python run_baselines.py sst solvability ROBERTA COMPREHENSIVENESS 50
+python run_baselines.py sst solvability ROBERTA EVAL_LOG_ODDS 50
+python run_baselines.py sst solvability ROBERTA AOPC_SUFFICIENCY 50
+python run_baselines.py sst solvability ROBERTA AOPC_COMPREHENSIVENESS 50
+python run_baselines.py sst solvability ROBERTA SUFFICIENCY 100
+python run_baselines.py sst solvability ROBERTA COMPREHENSIVENESS 100
+python run_baselines.py sst solvability ROBERTA EVAL_LOG_ODDS 100
+python run_baselines.py sst solvability ROBERTA AOPC_SUFFICIENCY 100
+python run_baselines.py sst solvability ROBERTA AOPC_COMPREHENSIVENESS 100

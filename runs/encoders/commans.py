@@ -47,7 +47,8 @@ for model in [ModelBackboneTypes.BERT, ModelBackboneTypes.ROBERTA, ModelBackbone
         if attribution_function.value in [f.sequential_integrated_gradients.value, f.solvability.value, f.alti.value,
                                           f.input_x_gradient.value]:
             name += 1
-        for task in [EMOTION_TASK, RTN_TASK, SST_TASK, IMDB_TASK, AGN_TASK]:
+        # for task in [EMOTION_TASK, RTN_TASK, SST_TASK, IMDB_TASK, AGN_TASK]:
+        for task in [SST_TASK]:
             solvability_batch_sizes = [-1]
             metrics_list = ["all"]
             if attribution_function.value == "solvability":

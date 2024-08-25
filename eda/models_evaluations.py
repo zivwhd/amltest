@@ -30,7 +30,7 @@ class EvalModel:
         if is_use_prompt():
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
-            ExpArgs.labels_tokens_opt = torch.stack(labels_tokens).squeeze()[:, -1]
+            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
 
     def run(self):
         with torch.no_grad():
@@ -63,13 +63,13 @@ class EvalModel:
                         task_prompt_attention_mask = tokenized_task_prompt.attention_mask,
                         label_prompt_attention_mask = tokenized_label.attention_mask)
 
-                if is_model_encoder_only() or self.task.is_llm_use_lora:
+                if is_model_encoder_only() or self.task.is_finetuned_with_lora:
                     logits = self.model(input_ids = input_ids, attention_mask = attention_mask).logits.squeeze()
                     self.preds.append(str(torch.argmax(logits, dim = -1).squeeze().item()))
                 else:
                     logits = self.model(input_ids = input_ids, attention_mask = attention_mask).logits[:, -1, :]
                     mask = torch.ones_like(logits, dtype = torch.bool)
-                    mask[:, ExpArgs.labels_tokens_opt] = False
+                    mask[:, ExpArgs.label_vocab_tokens] = False
                     logits[mask] = float('-inf')
 
                     new_pred = self.tokenizer.batch_decode(torch.argmax(logits, dim = -1))[0]
