@@ -24,12 +24,17 @@ class EvalModel:
         self.model = self.model.to(self.device)
         self.model.eval()
 
+        if not is_model_encoder_only():
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+            self.model.config.pad_token_id = self.tokenizer.eos_token_id
+
         self.preds: List[int] = []
         self.labels: List[int] = []
 
         if is_use_prompt():
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
+            ExpArgs.label_start_token = torch.stack(labels_tokens).squeeze()[:, 0]
             ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
 
     def run(self):
@@ -40,8 +45,7 @@ class EvalModel:
                 txt = row[0]
                 self.labels += [str(label)]
 
-                tokenized_input = self.tokenizer.encode_plus(txt,
-                                                             truncation = True, padding = False,
+                tokenized_input = self.tokenizer.encode_plus(txt, truncation = True, padding = False,
                                                              return_tensors = "pt",
                                                              add_special_tokens = not is_use_prompt()).to(self.device)
                 input_ids = tokenized_input.input_ids
@@ -60,6 +64,7 @@ class EvalModel:
                         inputs = input_ids, attention_mask = attention_mask,
                         task_prompt_input_ids = tokenized_task_prompt.input_ids,
                         label_prompt_input_ids = tokenized_label.input_ids,
+                        label_start_token = self.label_start_token,
                         task_prompt_attention_mask = tokenized_task_prompt.attention_mask,
                         label_prompt_attention_mask = tokenized_label.attention_mask)
 

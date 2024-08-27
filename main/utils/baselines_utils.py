@@ -85,6 +85,7 @@ def get_tokenizer(model_path: str):
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir = HF_CACHE, padding_side = 'left')
 
+
     # SET MAX LENGTH
     if task.is_llm_set_max_len and (not is_model_encoder_only()):
         tokenizer.model_max_length = task.llm_explained_tokenizer_max_length
