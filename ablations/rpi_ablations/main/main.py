@@ -272,7 +272,7 @@ class Baselines:
                 ExpArgs.evaluation_metric = metric.value
 
                 data_for_eval: DataForEvaluation = DataForEvaluation(  #
-                    tokens_attr = eval_attr_score.detach(),  #
+                    tokens_attributions = eval_attr_score.detach(),  #
                     input = DataForEvaluationInputs(  #
                         input_ids = origin_input_ids,  #
                         attention_mask = origin_attention_mask,  #

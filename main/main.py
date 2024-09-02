@@ -88,7 +88,12 @@ class Baselines:
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
 
-            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
+            tmp_label_tokens = torch.stack(labels_tokens).squeeze()
+            num_pre_toen = tmp_label_tokens[:, 0].unique()
+            ExpArgs.label_vocab_tokens = tmp_label_tokens[:, 1]
+            if (num_pre_toen.numel() != 1) or (num_pre_toen.shape[0] != 1) or (tmp_label_tokens.shape[-1] != 2):
+                raise ValueError("num_pre_toen not exists")
+            # a = 1
 
     def get_folder_name(self, metric: Enum):
         return f"{self.exp_path}/metric_{metric.value}"
@@ -132,7 +137,14 @@ class Baselines:
             from main.utils.solvability_explainer.solvex.masker import TextWordMasker
 
         # Prepare forward model
-        nn_forward_func = ForwardModel(model = self.model, model_name = self.model_name)
+        nn_forward_func = ForwardModel(model = self.model, model_name = self.model_name,
+
+                                       task_prompt_input_ids = self.task_prompt_input_ids,
+                                       label_prompt_input_ids = self.label_prompt_input_ids,
+                                       task_prompt_attention_mask = self.task_prompt_attention_mask,
+                                       label_prompt_attention_mask = self.label_prompt_attention_mask
+
+                                       )
         # Compute attributions
 
         for metric in self.metrics:
@@ -200,6 +212,7 @@ class Baselines:
                     n_steps = 10
                     if ExpArgs.task.name in [IMDB_TASK.name, AGN_TASK.name]:
                         n_steps = 4
+                n_steps = 2
                 _attr = explainer.attribute(input_embed, baselines = ref_input_embed, n_steps = n_steps,
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attribution_scores = summarize_attributions(_attr).detach()
@@ -231,7 +244,7 @@ class Baselines:
                 if origin_model_max_length != self.tokenizer.model_max_length:
                     self.tokenizer.model_max_length = origin_model_max_length
 
-            if AttrScoreFunctions.glob_enc.value:
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc.value :
                 attribution_scores = self.run_glob_enc(txt, input_ids, attention_mask)
 
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.solvability.value:
@@ -336,7 +349,7 @@ class Baselines:
                     ExpArgs.evaluation_metric = metric.value
 
                     data_for_eval: DataForEvaluation = DataForEvaluation(  #
-                        tokens_attr = eval_attr_score.detach(),  #
+                        tokens_attributions = eval_attr_score.detach(),  #
                         input = DataForEvaluationInputs(  #
                             input_ids = origin_input_ids,  #
                             attention_mask = origin_attention_mask,  #

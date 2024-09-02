@@ -29,6 +29,7 @@ def is_model_encoder_only(model = None):
 
     raise ValueError(f"unsupported model: {model}")
 
+
 def get_model_special_tokens(model, tokenizer):
     if is_model_encoder_only(model):
         return [  #
@@ -70,7 +71,7 @@ def get_current_time():
 
 
 def run_model(model, input_ids: Tensor = None, attention_mask: Tensor = None, inputs_embeds: Tensor = None,
-              is_return_logits: bool = False):
+              is_return_logits: bool = True):
     if is_model_encoder_only():
         model_output = model(input_ids = input_ids, attention_mask = attention_mask, inputs_embeds = inputs_embeds)
         logits = model_output.logits
@@ -91,7 +92,6 @@ def run_model(model, input_ids: Tensor = None, attention_mask: Tensor = None, in
         raise ValueError(f"unsupported return option")
 
 
-
 def merge_prompts(inputs, attention_mask, task_prompt_input_ids: Tensor = None, label_prompt_input_ids: Tensor = None,
                   task_prompt_attention_mask: Tensor = None, label_prompt_attention_mask: Tensor = None) -> Tuple[
     Tensor, Tensor]:
@@ -100,9 +100,9 @@ def merge_prompts(inputs, attention_mask, task_prompt_input_ids: Tensor = None, 
 
     if any(item is None for item in [task_prompt_input_ids, inputs, label_prompt_input_ids]):
         raise ValueError("can not be None")
+
     merged_inputs = torch.cat([task_prompt_input_ids, inputs, label_prompt_input_ids], dim = 1)
-    merged_attention_mask = torch.cat([task_prompt_attention_mask, attention_mask, label_prompt_attention_mask],
-                                      dim = 1)
+    merged_attention_mask = torch.cat([task_prompt_attention_mask, attention_mask, label_prompt_attention_mask], dim = 1)
 
     return merged_inputs, merged_attention_mask
 

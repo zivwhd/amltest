@@ -75,5 +75,5 @@ class Metrics:
                              explained_model_backbone = ExpArgs.explained_model_backbone, metric_result = metric_result,
                              metric_steps_result = None, steps_k = self.pretu_steps,
                              explained_model_predicted_class = self.data.explained_model_predicted_class.squeeze().item(),
-                             token_evaluation_option = ExpArgs.token_evaluation_option, reverse_noise_layer_index = ExpArgs.reverse_noise_layer_index)
+                             token_evaluation_option = ExpArgs.token_evaluation_option, attribution_scores_function=ExpArgs.attribution_scores_function)
         return pd.DataFrame([item])

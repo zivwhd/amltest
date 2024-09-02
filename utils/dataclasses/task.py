@@ -10,7 +10,7 @@ class Task:
                  is_finetuned_with_lora: bool, labels_str_int_maps: Union[Dict, None], test_sample: Union[int, None],
                  name: str, paper_name: str, llm_task_prompt: str, llm_few_shots_prompt: List[Tuple[str, int]],
                  is_llm_set_max_len = False, llama_adapter: str = None, mistral_adapter: str = None,
-                 llm_explained_tokenizer_max_length: int = -1):
+                 llm_explained_tokenizer_max_length: int = 0):
         self.dataset_name = dataset_name
         self.dataset_train = dataset_train
         self.dataset_test = dataset_test

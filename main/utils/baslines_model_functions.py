@@ -3,19 +3,42 @@ import torch.nn as nn
 
 from config.config import BackbonesMetaData, ExpArgs
 from config.types_enums import ModelBackboneTypes
-from utils.utils_functions import run_model, is_model_encoder_only
+from utils.utils_functions import run_model, is_model_encoder_only, is_use_prompt, merge_prompts, conv_to_word_embedding
 
 
 class ForwardModel(nn.Module):
-    def __init__(self, model, model_name):
+
+    def __init__(self, model, model_name, task_prompt_input_ids = None, label_prompt_input_ids = None,
+                 task_prompt_attention_mask = None, label_prompt_attention_mask = None):
         super().__init__()
         self.model = model
         self.model_name = model_name
 
+        if is_use_prompt():
+            self.task_prompt_input_embeds = conv_to_word_embedding(self.model, task_prompt_input_ids)
+            self.label_prompt_input_embeds = conv_to_word_embedding(self.model, label_prompt_input_ids)
+
+            self.task_prompt_attention_mask = task_prompt_attention_mask
+            self.label_prompt_attention_mask = label_prompt_attention_mask
+
     def forward(self, input_embed, attention_mask = None, position_embed = None, type_embed = None,
                 return_all_logits = False):
-        pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
-                         is_return_logits = True)
+        if is_use_prompt():
+            merged_input_embed, merged_attention_mask = merge_prompts(inputs = input_embed.clone(),
+                                                                      attention_mask = attention_mask,
+                                                                      task_prompt_input_ids = self.task_prompt_input_embeds.clone().detach().repeat(
+                                                                          input_embed.shape[0], 1, 1),
+                                                                      label_prompt_input_ids = self.label_prompt_input_embeds.clone().detach().repeat(
+                                                                          input_embed.shape[0], 1, 1),
+                                                                      task_prompt_attention_mask = self.task_prompt_attention_mask.clone().detach().repeat(
+                                                                          input_embed.shape[0], 1),
+                                                                      label_prompt_attention_mask = self.label_prompt_attention_mask.clone().detach().repeat(
+                                                                          input_embed.shape[0], 1))
+            pred = run_model(model = self.model, inputs_embeds = merged_input_embed,
+                             attention_mask = merged_attention_mask, is_return_logits = True)
+        else:
+            pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
+                             is_return_logits = True)
         # if is_model_encoder_only():
         #     embeds = input_embed
         #     # embeds = input_embed + position_embed
@@ -157,15 +180,16 @@ def get_inputs_encoder_only(tokenizer, model, model_name, ref_token, text, devic
 
 def get_inputs_llm(tokenizer, model, model_name, ref_token, text, device):
     ref_token_id = ref_token
-    # sep_token_id = tokenizer.encode(tokenizer.special_tokens_map["eos_token"])[0]
 
     if ExpArgs.task.is_finetuned_with_lora:
         text_ids = tokenizer.encode(text, add_special_tokens = True, truncation = True)
     else:
         text_ids = tokenizer.encode(text, add_special_tokens = False, truncation = True)
+
     input_ids = torch.tensor(text_ids, device = device).unsqueeze(0)  # construct input token ids
-    ref_input_ids = torch.tensor(([ref_token_id] * len(text_ids)), device = device).unsqueeze(
-        0)  # construct reference token ids
+
+    txt_ref_ids = [t if t in [tokenizer.bos_token_id, tokenizer.eos_token_id] else ref_token_id for t in text_ids]
+    ref_input_ids = torch.tensor(txt_ref_ids, device = device).unsqueeze(0)  # construct reference token ids
 
     input_embed = model.get_input_embeddings()(input_ids)
     ref_input_embed = model.get_input_embeddings()(ref_input_ids)

@@ -15,7 +15,7 @@ class DataForEvaluationInputs:
 
 @dataclass
 class DataForEvaluation:
-    tokens_attr: Tensor
+    tokens_attributions: Tensor
     input: DataForEvaluationInputs
     explained_model_predicted_class: Tensor
     explained_model_predicted_logits: Tensor
