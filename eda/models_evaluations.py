@@ -35,12 +35,11 @@ class EvalModel:
         if is_use_prompt():
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
-            label_start_token = torch.stack(labels_tokens).squeeze()[:, 0].unique()
-            if label_start_token.shape[-1] != 1:
-                raise ValueError("label_start_token should be one")
-            ExpArgs.label_start_token = label_start_token.unsqueeze(0).to(self.device)
-            ExpArgs.label_start_token_attention_mask = torch.ones_like(label_start_token).unsqueeze(0).to(self.device)
-            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
+
+            # ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
+            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()
+            if ExpArgs.label_vocab_tokens.ndim != 1:
+                raise ValueError("label_vocab_tokens must work with one token only")
 
     def run(self):
         with torch.no_grad():
@@ -65,11 +64,12 @@ class EvalModel:
                     tokenized_label = self.tokenizer.encode_plus(LABEL_PROMPT_NEW_LINE, padding = False,
                                                                  return_tensors = "pt", add_special_tokens = False).to(
                         self.device)
-                    
+
                     input_ids, attention_mask = merge_prompts(  #
                         inputs = input_ids, attention_mask = attention_mask,
                         task_prompt_input_ids = tokenized_task_prompt.input_ids,
-                        label_prompt_input_ids = tokenized_label.input_ids,                       task_prompt_attention_mask = tokenized_task_prompt.attention_mask,
+                        label_prompt_input_ids = tokenized_label.input_ids,
+                        task_prompt_attention_mask = tokenized_task_prompt.attention_mask,
                         label_prompt_attention_mask = tokenized_label.attention_mask)
 
                 if is_model_encoder_only() or self.task.is_finetuned_with_lora:

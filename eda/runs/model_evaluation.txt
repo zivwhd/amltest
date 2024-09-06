@@ -9,7 +9,7 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=30g
+#SBATCH --mem=25g
 #SBATCH --gpus=1
 #SBATCH --nodelist=gpu7
 
@@ -21,13 +21,13 @@ module load anaconda3
 source activate NEEA_2
 
 ## run
-python run_baselines.py sst LLAMA 1
-python run_baselines.py sst MISTRAL 1
-python run_baselines.py emotions LLAMA 1
-python run_baselines.py emotions MISTRAL 1
-python run_baselines.py rtn LLAMA 1
-python run_baselines.py rtn MISTRAL 1
-python run_baselines.py imdb LLAMA 1
-python run_baselines.py imdb MISTRAL 1
-python run_baselines.py agn LLAMA 1
-python run_baselines.py agn MISTRAL 1
+python run_baselines.py sst LLAMA
+python run_baselines.py sst MISTRAL
+python run_baselines.py emotions LLAMA
+python run_baselines.py emotions MISTRAL
+python run_baselines.py rtn LLAMA
+python run_baselines.py rtn MISTRAL
+python run_baselines.py imdb LLAMA
+python run_baselines.py imdb MISTRAL
+python run_baselines.py agn LLAMA
+python run_baselines.py agn MISTRAL

@@ -83,7 +83,10 @@ class BaselinesReasoning:
             labels_tokens = [self.tokenizer.encode(str(l), return_tensors = "pt", add_special_tokens = False) for l in
                              list(ExpArgs.task.labels_int_str_maps.keys())]
 
-            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
+            # ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()[:, -1]
+            ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()
+            if ExpArgs.label_vocab_tokens.ndim != 1:
+                raise ValueError("label_vocab_tokens must work with one token only")
 
     def get_folder_name(self, metric: Enum):
         return f"{self.exp_path}/metric_{metric.value}"

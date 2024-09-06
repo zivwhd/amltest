@@ -18,7 +18,7 @@ def write(_name: str, _line: str):
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=30g
+#SBATCH --mem=25g
 #SBATCH --gpus=1
 #SBATCH --nodelist=gpu7
 
@@ -47,8 +47,8 @@ for model in [ModelBackboneTypes.BERT, ModelBackboneTypes.ROBERTA, ModelBackbone
         if attribution_function.value in [f.sequential_integrated_gradients.value, f.solvability.value, f.alti.value,
                                           f.input_x_gradient.value]:
             name += 1
-        # for task in [EMOTION_TASK, RTN_TASK, SST_TASK, IMDB_TASK, AGN_TASK]:
-        for task in [SST_TASK]:
+        for task in [EMOTION_TASK, RTN_TASK, SST_TASK, IMDB_TASK, AGN_TASK]:
+        # for task in [SST_TASK]:
             solvability_batch_sizes = [-1]
             metrics_list = ["all"]
             if attribution_function.value == "solvability":
@@ -57,4 +57,5 @@ for model in [ModelBackboneTypes.BERT, ModelBackboneTypes.ROBERTA, ModelBackbone
             for solvability_batch in solvability_batch_sizes:
                 for metric in metrics_list:
                     line = f"python run_baselines.py {task.name} {attribution_function.value} {model.value} {metric} {solvability_batch}"
+                    print(line)
                     write(name, line)

@@ -72,7 +72,8 @@ class Metrics:
     def transform_results(self, metric_result):
         item = MetricResults(item_index = self.item_index, task = ExpArgs.task.name,
                              evaluation_metric = ExpArgs.evaluation_metric,
-                             explained_model_backbone = ExpArgs.explained_model_backbone, metric_result = metric_result,
+                             explained_model_backbone = ExpArgs.explained_model_backbone,
+                             metric_result = metric_result, metric_result_str = "{:.6f}".format(metric_result),
                              metric_steps_result = None, steps_k = self.pretu_steps,
                              explained_model_predicted_class = self.data.explained_model_predicted_class.squeeze().item(),
                              token_evaluation_option = ExpArgs.token_evaluation_option, attribution_scores_function=ExpArgs.attribution_scores_function)

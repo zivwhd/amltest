@@ -3,13 +3,12 @@ from utils.dataclasses import Task
 
 IMDB_TASK: Task = Task(  #
     dataset_name = "imdb",  #
-    dataset_train = "train",  #
     dataset_test = "test", dataset_column_text = "text",  #
     dataset_column_label = "label",  #
     bert_fine_tuned_model = "textattack/bert-base-uncased-imdb",  #
     roberta_fine_tuned_model = "textattack/roberta-base-imdb",  #
     distilbert_fine_tuned_model = "textattack/distilbert-base-uncased-imdb",  #
-    labels_str_int_maps = dict(negative = 0, positive = 1),  #
+    labels_str_int_maps = dict(negative = 'N', positive = 'P'),  #
     test_sample = 2_000,  #
     name = "imdb",  #
     paper_name = "IMDB",  #
@@ -18,23 +17,24 @@ IMDB_TASK: Task = Task(  #
     llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",  #
     mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",  #
     is_finetuned_with_lora = False,  #
-    llm_task_prompt = "Classify the sentiment of the movie review. For each sentence the label is positive (1) or negative (0)",
+    llm_task_prompt = "Classify the sentiment of the movie review. For each sentence the label is positive (P) or negative (N)",
     llm_few_shots_prompt = [  #
         (
             "This movie is so bad, I knew how it ends right after this little girl killed the first person. Very bad acting very bad plot very bad movie<br /><br />do yourself a favour and DON'T watch it 1/10",
             #
-            0),  #
+            "N"),  #
         (
             "Very smart, sometimes shocking, I just love it. It shoved one more side of David's brilliant talent. He impressed me greatly! David is the best. The movie captivates your attention for every second.",
             #
-            1), (
+            "P"), #
+        (
             "If there is a movie to be called perfect then this is it. So bad it wasn't intended to be that way. But superb anyway... Go find it somewhere. Whatever you do... Do not miss it!!!",
             #
-            1), ("Long, boring, blasphemous. Never have I been so glad to see ending credits roll", 0)  #
+            "P"), #
+        ("Long, boring, blasphemous. Never have I been so glad to see ending credits roll", "N")  #
     ])
 
 EMOTION_TASK: Task = Task(dataset_name = "emotion",  #
-                          dataset_train = "train",  #
                           dataset_test = "test",  #
                           dataset_column_text = "text",  #
                           dataset_column_label = "label",
@@ -48,35 +48,15 @@ EMOTION_TASK: Task = Task(dataset_name = "emotion",  #
                           #
                           mistral_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/MISTRAL_emotions_is_bf16_True_is_use_prompt_False",
                           #
-                          labels_str_int_maps = dict(sadness = 0, joy = 1, love = 2, anger = 3, fear = 4, surprise = 5),
+                          labels_str_int_maps = dict(sadness = "A", joy = "B", love = "C", anger = "D", fear = "E", surprise = "F"),
                           #
                           test_sample = None,  #
                           name = "emotions",  #
                           paper_name = "EMR",
-                          llm_task_prompt = "Classify the emotion expressed in each sentences. for each sentence the label is sadness (0) or joy (1) or love (2) or anger (3) or fear (4) or surprise (5)",
-                          llm_few_shots_prompt = [('i feel when seeing a child suffering this way', 0),  #
-                                                  ('im feeling a little overwhelmed here recently', 5),  #
-                                                  ('i feel so annoyed', 3),  #
-                                                  ('i do not feel overwhelmed nor rushed', 4),  #
-                                                  ('i shook my head feeling dazed', 5),  #
-                                                  ('i cant feel complacent', 1),  #
-                                                  ('i mean post and i feel rotten abou', 0),  #
-                                                  ('im feeling about as horny as a dead goat', 2),  #
-                                                  ('i feel like an emotional train wreck', 0),  #
-                                                  ('i feel pressured by a dumb feeling', 4),  #
-                                                  ('i miss the feeling of feeling amazing', 5),  #
-                                                  ('i feel so frustrated but i cant tell them i am', 3),  #
-                                                  ('i feel fearful of being near them', 4),  #
-                                                  ('i just feel like its rude', 3),  #
-                                                  ('i didnt really feel like being thankful', 1),  #
-                                                  ('i must feel loving toward everyone', 2),  #
-                                                  ('i felt good and feel fine today too', 1),  #
-                                                  ('i began to feel accepted by gaia on her own terms', 2)  #
-
-                                                  ])
+                          llm_task_prompt = "Classify the emotion expressed in each sentences. for each sentence the label is sadness (A) or joy (B) or love (C) or anger (D) or fear (4) or surprise (E)",
+                          llm_few_shots_prompt = [])
 
 SST_TASK: Task = Task(dataset_name = "sst2",  #
-                      dataset_train = "train",  #
                       dataset_test = "test",  #
                       dataset_column_text = "sentence",  #
                       dataset_column_label = "label",  #
@@ -86,29 +66,28 @@ SST_TASK: Task = Task(dataset_name = "sst2",  #
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
                       is_finetuned_with_lora = False,  #
-                      labels_str_int_maps = dict(n = 0, p = 1),  #
+                      labels_str_int_maps = dict(negative = 'N', positive = 'P'),  #
                       test_sample = None,  #
                       name = "sst",  #
                       paper_name = "SST2",  #
-                      llm_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
-                      llm_few_shots_prompt = [("hide new secretions from the parental units", 0),
-                                              ("the greatest musicians", 1),  #
-                                              ("are more deeply thought through than in most ` right-thinking ' films",
-                                               1),  #
-                                              (
-                                                  "on the worst revenge-of-the-nerds clichés the filmmakers could dredge up",
-                                                  0)  #
-                                              ])
+                      llm_task_prompt = "Classify the sentiment of sentences. For each sentence the label is positive (P) or negative (N)",
+                      llm_few_shots_prompt = [  #
+                          ("hide new secretions from the parental units",  #
+                           "N"),  #
+                          ("the greatest musicians",  #
+                           "P"),  #
+                          ("are more deeply thought through than in most ` right-thinking ' films", "P"),  #
+                          ("on the worst revenge-of-the-nerds clichés the filmmakers could dredge up", "N")  #
+                      ])
 
 AGN_TASK: Task = Task(dataset_name = "ag_news",  #
-                      dataset_train = "train",  #
                       dataset_test = "test",  #
                       dataset_column_text = "text",  #
                       dataset_column_label = "label",  #
                       bert_fine_tuned_model = "fabriceyhc/bert-base-uncased-ag_news",
                       roberta_fine_tuned_model = "textattack/roberta-base-ag-news",
                       distilbert_fine_tuned_model = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/agn_distillbert",
-                      labels_str_int_maps = dict(world = 0, sports = 1, business = 2, sci_tech = 3),
+                      labels_str_int_maps = dict(world = "A", sports = "B", business = "C", sci_tech = "D"),
                       test_sample = 2_000, name = "agn",  #
                       paper_name = "AGN",
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
@@ -116,72 +95,36 @@ AGN_TASK: Task = Task(dataset_name = "ag_news",  #
                       llama_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/LLAMA_agn_is_bf16_True_is_use_prompt_False",
                       mistral_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/MISTRAL_agn_is_bf16_True_is_use_prompt_False",
                       is_finetuned_with_lora = True,
-                      llm_task_prompt = "Classify the news articles. for each article label is World (0) Sports (1) Business (2) Sci/Tech (3)",
-                      llm_few_shots_prompt = [(
-                          'Bears Defeat Vikings, 24-14 (AP) AP - Hanging with Chad was a winning experience for the Chicago Bears.',
-                          1),  #
-                          (
-                              "Dual-core IBM PowerPC 'to ship in single-core form' Standalone part - or a dualie with one dud core?",
-                              3),  #
-                          (
-                              "Students Aiming to Avoid 'Freshman 15' AUSTIN - All-you-can-eat dorm dining. Late-night pizza parties...",
-                              0),  #
-                          (
-                              'Henry Relishes Job of Covering Owens (AP) AP - No Sharpies. No situps. No pom-pom shaking. No spikes.',
-                              1),  #
-                          (
-                              'Cricket: England whitewash England beat the West Indies by 10 wickets to seal a 4-0 series whitewash.',
-                              0),  #
-                          (
-                              'Types of Investors: Which Are You? Learn a little about yourself, and it may improve your performance.',
-                              2),  #
-                          (
-                              "Oracle's first monthly patch batch fails to placate critics Behind MS on security, says top bug hunter",
-                              3),  #
-                          (
-                              "Pixar's Waiting for Summer Plus, IBM's win-win, Eli Lilly bares all, and a ticking retirement time bomb.",
-                              2),  #
-                          (
-                              'BBC wants help developing open source video codec &lt;strong&gt;LinuxWorld&lt;/strong&gt; Dirac attack',
-                              3),  #
-                          (
-                              'Baseball Today (AP) AP - Houston at St. Louis (8:19 p.m. EDT). Game 7 of the NL championship series.',
-                              1),  #
-                          (
-                              'Poisoned. But Whodunit? The Ukrainian election takes a new twist after a stunning medical disclosure',
-                              0),  #
-                          (
-                              "The iPod's Big Brother Apple's latest computer is as cool and sleek as its best-selling music player",
-                              2)  #
-
-                      ])
+                      llm_task_prompt = "Classify the news articles. For each article label is World (A) Sports (B) Business (C) Sci/Tech (D)",
+                      llm_few_shots_prompt = [])
 
 RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes",  #
-                      dataset_train = "train",  #
                       dataset_test = "test",  #
                       dataset_column_text = "text",  #
                       dataset_column_label = "label",
                       bert_fine_tuned_model = "textattack/bert-base-uncased-rotten-tomatoes",
                       roberta_fine_tuned_model = "textattack/roberta-base-rotten-tomatoes",
                       distilbert_fine_tuned_model = "textattack/distilbert-base-uncased-rotten-tomatoes",
-                      labels_str_int_maps = dict(negative = 0, positive = 1), test_sample = None,  #
+                      labels_str_int_maps = dict(negative = 'N', positive = 'P'),  #
+                      test_sample = None,  #
                       name = "rtn",  #
                       paper_name = "RTN",  #
                       llama_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/meta-llama_Llama-2-7b-hf",
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
                       is_finetuned_with_lora = False,
-                      llm_task_prompt = "Classify the sentiment of sentences. for each sentence the label is positive (1) or negative (0)",
+                      llm_task_prompt = "Classify the sentiment of sentences. For each sentence the label is positive (P) or negative (N)",
                       llm_few_shots_prompt = [
                           ("the film desperately sinks further and further into comedy futility .",  #
-                           0),  #
+                           #
+                           "N"),  #
                           ("if you sometimes like to go to the movies to have fun , wasabi is a good place to start .",
-                           1),  #
+                           "P"),  #
                           ("plays like the old disease-of-the-week small-screen melodramas .",  #
-                           0),  #
+                           "N"),  #
                           ("hip-hop has a history , and it's a metaphor for this love story .",  #
-                           1),  #
+                           "P"),  #
                           ("spiderman rocks",  #
-                           1),  #
+                           "P"),  #
                           ("so exaggerated and broad that it comes off as annoying rather than charming .",  #
-                           0)  #
+                           "N")  #
                       ])
