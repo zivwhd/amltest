@@ -11,7 +11,7 @@ import pandas as pd
 from torch import Tensor
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from config.tasks import IMDB_TASK, AGN_TASK
+from config.tasks import IMDB_TASK, AGN_TASK, RTN_TASK, SST_TASK, EMOTION_TASK
 from main.utils.baselines_utils import get_model, get_data, get_tokenizer, init_baseline_exp
 from main.utils.baslines_model_functions import ForwardModel, get_inputs
 from main.utils.seg_ig import SequentialIntegratedGradients
@@ -91,6 +91,7 @@ class Baselines:
             ExpArgs.label_vocab_tokens = torch.stack(labels_tokens).squeeze()
             if ExpArgs.label_vocab_tokens.ndim != 1:
                 raise ValueError("label_vocab_tokens must work with one token only")
+            print(f"ExpArgs.label_vocab_tokens: {ExpArgs.label_vocab_tokens}")
 
     def get_folder_name(self, metric: Enum):
         return f"{self.exp_path}/metric_{metric.value}"
@@ -128,8 +129,7 @@ class Baselines:
         elif ExpArgs.attribution_scores_function == AttrScoreFunctions.solvability.value:
             # sys.path.append(f"{os.getcwd()}/../../main/utils/solvability_explainer")
             if not is_model_encoder_only():
-                self.tokenizer.pad_token_id = self.tokenizer.unk_token_id
-                self.tokenizer.padding_side = "left"
+                raise ValueError("solvability not working with LLMs")
             from main.utils.solvability_explainer.solvex.explainer import BeamSearchExplainer
             from main.utils.solvability_explainer.solvex.masker import TextWordMasker
 
@@ -157,14 +157,20 @@ class Baselines:
                 tokenizer = self.tokenizer, model = self.model, model_name = self.model_name,
                 ref_token = self.ref_token, text = txt, device = self.device)
             attention_mask = origin_attention_mask.clone()
-            input_ids, attention_mask = self.merge_prompts_handler(origin_input_ids.clone(), attention_mask)
-            ref_input_ids, _ = self.merge_prompts_handler(origin_ref_input_ids.clone(), attention_mask)
-            input_embed, _ = self.merge_prompts_embeddings__handler(origin_input_embed.clone(), attention_mask)
-            ref_input_embed, _ = self.merge_prompts_embeddings__handler(origin_ref_input_embed.clone(), attention_mask)
+            merged_input_ids, merged_attention_mask = self.merge_prompts_handler(origin_input_ids.clone(),
+                                                                                 attention_mask)
+            # ref_input_ids, _ = self.merge_prompts_handler(origin_ref_input_ids.clone(), attention_mask)
+            # input_embed, _ = self.merge_prompts_embeddings__handler(origin_input_embed.clone(), attention_mask)
+            # ref_input_embed, _ = self.merge_prompts_embeddings__handler(origin_ref_input_embed.clone(), attention_mask)
 
+            input_ids = origin_input_ids
+            input_embed = origin_input_embed
+            ref_input_embed = origin_ref_input_embed
+
+            # print(f"merged_input_ids: {merged_input_ids}")
             with torch.no_grad():
-                explained_model_logits = run_model(model = self.model, input_ids = input_ids,
-                                                   attention_mask = attention_mask, is_return_logits = True)
+                explained_model_logits = run_model(model = self.model, input_ids = merged_input_ids,
+                                                   attention_mask = merged_attention_mask, is_return_logits = True)
                 explained_model_predicted_class = torch.argmax(explained_model_logits, dim = 1)
             self.model.zero_grad()
 
@@ -205,13 +211,50 @@ class Baselines:
                 explainer = SequentialIntegratedGradients(nn_forward_func)
 
                 n_steps = 50  # default value
-                if not is_model_encoder_only():
-                    n_steps = 10
-                    if ExpArgs.task.name in [IMDB_TASK.name, AGN_TASK.name]:
-                        n_steps = 4
-                n_steps = 2
-                _attr = explainer.attribute(input_embed, baselines = ref_input_embed, n_steps = n_steps,
-                                            additional_forward_args = (attention_mask, position_embed, type_embed,), )
+
+                if is_model_encoder_only():
+                    # print("C"*100)
+                    _attr = explainer.attribute(input_embed,
+                                                internal_batch_size = 3,
+                                                baselines = ref_input_embed, n_steps = n_steps,
+                                                additional_forward_args = (
+                                                    attention_mask, position_embed, type_embed,), )
+                elif not is_use_prompt():
+                    print("B"*100)
+                    n_steps = ExpArgs.n_steps
+                    batch_size = int(ExpArgs.batch_size)
+                    if batch_size != 0:
+                        print("K" * 100)
+                        _attr = explainer.attribute(input_embed,
+                                                    internal_batch_size = batch_size,
+                                                    baselines = ref_input_embed, n_steps = n_steps,
+                                                    additional_forward_args = (
+                                                    attention_mask, position_embed, type_embed,))
+                    else:
+                        print("L" * 100)
+                        _attr = explainer.attribute(input_embed,
+                                                    baselines = ref_input_embed, n_steps = n_steps,
+                                                    additional_forward_args = (
+                                                    attention_mask, position_embed, type_embed,))
+
+                else:
+                    print("A"*100)
+                    n_steps = ExpArgs.n_steps
+                    batch_size = int(ExpArgs.batch_size)
+                    if batch_size != 0:
+                        print("T"*100)
+                        _attr = explainer.attribute(input_embed,
+                                                    internal_batch_size = batch_size,
+                                                    baselines = ref_input_embed, n_steps = n_steps,
+                                                    additional_forward_args = (
+                                                        attention_mask, position_embed, type_embed,), )
+                    else:
+                        print("Z"*100)
+                        _attr = explainer.attribute(input_embed,
+                                                    baselines = ref_input_embed, n_steps = n_steps,
+                                                    additional_forward_args = (
+                                                        attention_mask, position_embed, type_embed,), )
+
                 attribution_scores = summarize_attributions(_attr).detach()
 
                 del explainer
@@ -241,7 +284,7 @@ class Baselines:
                 if origin_model_max_length != self.tokenizer.model_max_length:
                     self.tokenizer.model_max_length = origin_model_max_length
 
-            if ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc.value :
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.glob_enc.value:
                 attribution_scores = self.run_glob_enc(txt, input_ids, attention_mask)
 
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.solvability.value:
@@ -336,10 +379,10 @@ class Baselines:
             eval_attr_score = attribution_scores
 
             if ExpArgs.is_evaluate:
-                if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attribution_scores_function):
-                    eval_attr_score = attribution_scores[
-                                      self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[
-                                          -1]].detach()
+                # if is_use_prompt() and (AttrScoreFunctions.llm.value != ExpArgs.attribution_scores_function):
+                #     eval_attr_score = attribution_scores[
+                #                       self.task_prompt_input_ids.shape[-1]:-self.label_prompt_input_ids.shape[
+                #                           -1]].detach()
 
                 for metric in self.metrics:
                     experiment_path = self.get_folder_name(metric)

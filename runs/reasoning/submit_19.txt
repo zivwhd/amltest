@@ -1,0 +1,24 @@
+#!/bin/bash
+
+## resource allocation
+#SBATCH --job-name=REASONING_BL_19_
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
+
+#SBATCH --qos=gpu
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=25g
+#SBATCH --gres=gpu:a100:1
+
+
+#SBATCH --no-requeue
+
+
+## modules and apps
+module load anaconda3
+source activate NEEA_2
+
+## run
+python run_baselines.py imdb solvability BERT 140 160

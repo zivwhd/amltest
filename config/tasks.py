@@ -18,6 +18,7 @@ IMDB_TASK: Task = Task(  #
     mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",  #
     is_finetuned_with_lora = False,  #
     llm_task_prompt = "Classify the sentiment of the movie review. For each sentence the label is positive (P) or negative (N)",
+    task_definition = "sentiment classification",  #
     llm_few_shots_prompt = [  #
         (
             "This movie is so bad, I knew how it ends right after this little girl killed the first person. Very bad acting very bad plot very bad movie<br /><br />do yourself a favour and DON'T watch it 1/10",
@@ -26,11 +27,11 @@ IMDB_TASK: Task = Task(  #
         (
             "Very smart, sometimes shocking, I just love it. It shoved one more side of David's brilliant talent. He impressed me greatly! David is the best. The movie captivates your attention for every second.",
             #
-            "P"), #
+            "P"),  #
         (
             "If there is a movie to be called perfect then this is it. So bad it wasn't intended to be that way. But superb anyway... Go find it somewhere. Whatever you do... Do not miss it!!!",
             #
-            "P"), #
+            "P"),  #
         ("Long, boring, blasphemous. Never have I been so glad to see ending credits roll", "N")  #
     ])
 
@@ -48,12 +49,13 @@ EMOTION_TASK: Task = Task(dataset_name = "emotion",  #
                           #
                           mistral_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/MISTRAL_emotions_is_bf16_True_is_use_prompt_False",
                           #
-                          labels_str_int_maps = dict(sadness = "A", joy = "B", love = "C", anger = "D", fear = "E", surprise = "F"),
-                          #
+                          labels_str_int_maps = dict(sadness = "A", joy = "B", love = "C", anger = "D", fear = "E",
+                                                     surprise = "F"), #
                           test_sample = None,  #
                           name = "emotions",  #
                           paper_name = "EMR",
                           llm_task_prompt = "Classify the emotion expressed in each sentences. for each sentence the label is sadness (A) or joy (B) or love (C) or anger (D) or fear (4) or surprise (E)",
+                          task_definition = "emotions recognition",  #
                           llm_few_shots_prompt = [])
 
 SST_TASK: Task = Task(dataset_name = "sst2",  #
@@ -71,6 +73,7 @@ SST_TASK: Task = Task(dataset_name = "sst2",  #
                       name = "sst",  #
                       paper_name = "SST2",  #
                       llm_task_prompt = "Classify the sentiment of sentences. For each sentence the label is positive (P) or negative (N)",
+                      task_definition = "sentiment classification",  #
                       llm_few_shots_prompt = [  #
                           ("hide new secretions from the parental units",  #
                            "N"),  #
@@ -96,6 +99,7 @@ AGN_TASK: Task = Task(dataset_name = "ag_news",  #
                       mistral_adapter = f"{LOCAL_MODELS_PREFIX}/TRAINED_MODELS/MISTRAL_agn_is_bf16_True_is_use_prompt_False",
                       is_finetuned_with_lora = True,
                       llm_task_prompt = "Classify the news articles. For each article label is World (A) Sports (B) Business (C) Sci/Tech (D)",
+                      task_definition = "news classification",  #
                       llm_few_shots_prompt = [])
 
 RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes",  #
@@ -113,6 +117,7 @@ RTN_TASK: Task = Task(dataset_name = "rotten_tomatoes",  #
                       mistral_model = f"{LOCAL_MODELS_PREFIX}/DOWNLOADED_MODELS/mistralai_Mistral-7B-v0.1",
                       is_finetuned_with_lora = False,
                       llm_task_prompt = "Classify the sentiment of sentences. For each sentence the label is positive (P) or negative (N)",
+                      task_definition = "sentiment classification",  #
                       llm_few_shots_prompt = [
                           ("the film desperately sinks further and further into comedy futility .",  #
                            #

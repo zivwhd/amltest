@@ -24,6 +24,7 @@ class ForwardModel(nn.Module):
     def forward(self, input_embed, attention_mask = None, position_embed = None, type_embed = None,
                 return_all_logits = False):
         if is_use_prompt():
+            # print(f"forward - input_embed.shape: {input_embed.shape}. input_embed: {input_embed}")
             merged_input_embed, merged_attention_mask = merge_prompts(inputs = input_embed.clone(),
                                                                       attention_mask = attention_mask,
                                                                       task_prompt_input_ids = self.task_prompt_input_embeds.clone().detach().repeat(
@@ -34,9 +35,11 @@ class ForwardModel(nn.Module):
                                                                           input_embed.shape[0], 1),
                                                                       label_prompt_attention_mask = self.label_prompt_attention_mask.clone().detach().repeat(
                                                                           input_embed.shape[0], 1))
+            # print(f"forward - input_embed.shape: {merged_input_embed.shape}. input_embed: {merged_input_embed}")
             pred = run_model(model = self.model, inputs_embeds = merged_input_embed,
                              attention_mask = merged_attention_mask, is_return_logits = True)
         else:
+            # print(f"forward -regualr - input_embed.shape: {input_embed.shape}. input_embed: {input_embed}")
             pred = run_model(model = self.model, inputs_embeds = input_embed, attention_mask = attention_mask,
                              is_return_logits = True)
         # if is_model_encoder_only():

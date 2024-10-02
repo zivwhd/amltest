@@ -66,6 +66,7 @@ class MetricsFunctions:
         origin_masked_input_ids = inputs.input_ids[0][mask].unsqueeze(0)
         origin_masked_attention_mask = inputs.attention_mask[0][mask].unsqueeze(0)
 
+        # print(f"EVAL - before merge: {origin_masked_input_ids}")
         merged_masked_input_ids, merged_masked_attention_mask = merge_prompts(  #
             inputs = origin_masked_input_ids, attention_mask = origin_masked_attention_mask,
             task_prompt_input_ids = inputs.task_prompt_input_ids,
@@ -73,6 +74,7 @@ class MetricsFunctions:
             task_prompt_attention_mask = inputs.task_prompt_attention_mask,
             label_prompt_attention_mask = inputs.label_prompt_attention_mask  #
         )
+        # print(f"EVAL - before merge: {merged_masked_input_ids}")
 
         perturbed_logits = run_model(model = self.model, input_ids = merged_masked_input_ids.cuda(),
                                      attention_mask = merged_masked_attention_mask.cuda()).squeeze()
