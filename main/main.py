@@ -191,6 +191,21 @@ class Baselines:
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attribution_scores = summarize_attributions(_attr)
 
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.sloc.value:
+                with torch.no_grad():
+                    print("input_ids", input_ids)
+                    logits = run_model(model = self.model, input_ids = input_ids, is_return_logits = True)
+                    print("logits", logits)
+                ##
+                explainer = Lime(self.lime_func)
+                _attr = explainer.attribute(input_ids, target = explained_model_logits.max(1)[1])
+                attribution_scores = _attr.squeeze().detach()
+                print("attr-scores:", attribution_scores)
+                print("attr-scores-shape:", attribution_scores.shape)
+
+                #probs = torch.nn.functional.softmax(logits, dim = -1).cpu()         
+                raise Exception("Not implemented") 
+            
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.lime.value:
                 explainer = Lime(self.lime_func)
                 _attr = explainer.attribute(input_ids, target = explained_model_logits.max(1)[1])

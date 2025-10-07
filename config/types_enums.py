@@ -61,6 +61,8 @@ class AttrScoreFunctions(Enum):
     glob_enc_dim_0 = 'glob_enc_dim_0'
     llm = "llm"
     solvability = "solvability"
+    sloc = "sloc"
+    logistic = "logistic"
 
 
 class TokenEvaluationOptions(Enum):
