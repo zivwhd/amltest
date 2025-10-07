@@ -6,6 +6,7 @@
 #logits: tensor([[ 6.7980, -1.6343, -1.4902, -0.8498, -0.9241, -1.8199]], device='cuda:0')
 
 import torch
+import sys
 from scipy.sparse.linalg import cg, gmres, lsqr
 
 class Sloc:
@@ -42,6 +43,7 @@ class Sloc:
 
     @torch.no_grad()
     def run(self, run_model, input_ids, target):
+        sys.stdout.flush()
         masks, resps = self.gen_mask_resp(run_model, input_ids, target)
 
         Y = resps
