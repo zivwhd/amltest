@@ -57,6 +57,6 @@ class Sloc:
         XTX = XTXw + torch.eye(XTXw.shape[0]) *  c_magnitude / XTXw.shape[0]
         bb, _info = gmres(XTX.numpy(), XTY.numpy())
         sal = torch.Tensor(bb)    
-        print("shape", sal.shape)
+        #print("shape", sal.shape)
         return sal
 
