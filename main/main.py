@@ -195,7 +195,9 @@ class Baselines:
                 with torch.no_grad():
                     print("input_ids", input_ids)
                     logits = run_model(model = self.model, input_ids = input_ids, is_return_logits = True)
+                    probs = run_model(model = self.model, input_ids = input_ids, is_return_logits = False)
                     print("logits", logits)
+                    print("probs", logits)
                 ##
                 explainer = Lime(self.lime_func)
                 _attr = explainer.attribute(input_ids, target = explained_model_logits.max(1)[1])
