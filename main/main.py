@@ -27,7 +27,7 @@ from utils.utils_functions import (run_model, get_device, is_model_encoder_only,
                                    is_use_prompt)
 
 import torch
-from sloc import Sloc
+from main.sloc import Sloc
 from captum.attr import (DeepLift, GradientShap, InputXGradient, IntegratedGradients, Lime)
 from evaluations.evaluations import evaluate_tokens_attributions
 
