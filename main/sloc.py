@@ -34,7 +34,7 @@ class Sloc:
             pert = [[tok for tok, lit in zip(linput, imask) if lit]]
             tpert = torch.tensor(pert, device=device)
             out = rmodel(tpert)
-            resp = out[0, target].tolist() - base
+            resp = out[0, target].tolist()[0] - base
             responses.append(resp)
 
         return masks, torch.Tensor(responses)
