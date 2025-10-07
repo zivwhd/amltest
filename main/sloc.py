@@ -30,7 +30,7 @@ class Sloc:
         masks = masks[masks.sum(dim=1) > 1, :]
         responses = []
         linput = input_ids[0].cpu().tolist()
-        for idx in range(self.nmasks):            
+        for idx in range(masks.shape[0]):            
             imask = masks[idx].tolist()
             pert = [[tok for tok, lit in zip(linput, imask) if lit]]
             tpert = torch.tensor(pert, device=device)
