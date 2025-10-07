@@ -45,7 +45,7 @@ class Sloc:
 
         Y = resps
         X = masks * 1.0
-        weights = torch.sqrt(1/ X.shape[0])
+        weights = torch.sqrt(torch.ones(1) / X.shape[0])
         Xw = X * weights
         XTXw = Xw.T @ Xw
         XTY = Xw.T @ Y
