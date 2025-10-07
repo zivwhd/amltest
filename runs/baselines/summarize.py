@@ -18,7 +18,7 @@ for csv_file in csv_files:
     
     # Group by the specified columns and compute mean
     grouped = (
-        df.groupby(['task', 'evaluation_metric', 'explained_model_backbone'])['metric_result']
+        df.groupby(['task', 'attribution_scores_function', 'evaluation_metric', 'explained_model_backbone'])['metric_result']
         .mean()
         .reset_index()
         .rename(columns={'metric_result': 'mean_metric_result'})
