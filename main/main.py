@@ -1,7 +1,7 @@
 import gc
 import os
 import sys
-import time
+import time, datetime
 from enum import Enum
 from pathlib import Path
 from typing import List
@@ -420,7 +420,27 @@ class Baselines:
             times.append(end - begin)
 
         print(f"duration: {np.array(times).mean()}")
-
+        ##################
+        print(f"saving - summary")
+        input_path = Path(experiment_path) / "results.csv"
+        output_path = (Path(experiment_path) / "../../summary.csv").resolve()
+        # Read input DataFrame
+        df = pd.read_csv(input_path)
+        # Group and compute mean
+        grouped = (
+            df.groupby(['task', 'evaluation_metric', 'explained_model_backbone'])['metric_result']
+            .mean()
+            .reset_index()
+            .rename(columns={'metric_result': 'mean_metric_result'})
+        )
+        current_time = datetime.now().isoformat(timespec='seconds')  # e.g., '2025-10-07T21:42:00'
+        grouped['timestamp'] = current_time
+        # Check if summary file exists
+        write_header = not output_path.exists()
+        # Append to the output file
+        grouped.to_csv(output_path, mode='a', index=False, header=write_header)
+        print(f"done saving summary")
+        ########################
         if ExpArgs.is_save_times:
             pd.DataFrame(dict(  #
                 time = [np.array(times).mean()],  #
