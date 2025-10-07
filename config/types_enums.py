@@ -62,6 +62,7 @@ class AttrScoreFunctions(Enum):
     llm = "llm"
     solvability = "solvability"
     sloc = "sloc"
+    sloc = "slocB"
     logistic = "logistic"
 
 

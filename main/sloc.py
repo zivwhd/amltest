@@ -11,9 +11,10 @@ from scipy.sparse.linalg import cg, gmres, lsqr
 
 class Sloc:
 
-    def __init__(self):
+    def __init__(self, with_bias=False):
         self.prob = 0.5
         self.nmasks = 200
+        self.with_bias = with_bias
 
 
     def gen_mask_resp(self, run_model, input_ids, target, is_return_logits=False):
@@ -48,6 +49,9 @@ class Sloc:
 
         Y = resps
         X = masks * 1.0
+        if self.with_bias:
+            masks = torch.concat([torch.ones(masks.shape[0],1), masks], dim=1)
+
         weights = torch.sqrt(torch.ones(1) / X.shape[0])
         Xw = X * weights
         XTXw = Xw.T @ Xw
@@ -56,7 +60,9 @@ class Sloc:
         c_magnitude = 0.01
         XTX = XTXw + torch.eye(XTXw.shape[0]) *  c_magnitude / XTXw.shape[0]
         bb, _info = gmres(XTX.numpy(), XTY.numpy())
-        sal = torch.Tensor(bb)    
+        sal = torch.tensor(bb)    
+        if self.with_bias:
+            sal = sal[1:]
         #print("shape", sal.shape)
         return sal
 
