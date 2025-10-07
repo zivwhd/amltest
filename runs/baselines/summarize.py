@@ -3,11 +3,12 @@ from pathlib import Path
 
 # Define base paths
 base_path = Path("OUT")
-output_path = base_path / "summary.csv"
+output_path = base_path / "msummary.csv"
 
 # List all results_df.csv files recursively
-csv_files = list(base_path.glob("*/**/results_df.csv"))
+csv_files = list(base_path.glob("*/*/results.csv"))
 
+print(f"found: {csv_files}")
 # Collect grouped DataFrames
 all_grouped = []
 
