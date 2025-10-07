@@ -202,6 +202,8 @@ class Baselines:
                 attribution_scores = _attr.squeeze().detach()
                 print("attr-scores:", attribution_scores)
                 print("attr-scores-shape:", attribution_scores.shape)
+                print("logits:", explained_model_logits)
+                print("target:", explained_model_logits.max(1)[1])
 
                 #probs = torch.nn.functional.softmax(logits, dim = -1).cpu()         
                 raise Exception("Not implemented") 
