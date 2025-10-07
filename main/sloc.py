@@ -23,7 +23,7 @@ class Sloc:
             vals = run_model(inp)
             return torch.softmax(vals, dim=1)
 
-        base = rmodel(torch.tensor([[]], device=device))[0,target].tolist()
+        base = 0 #rmodel(torch.tensor([[]], device=device))[0,target].tolist()
 
         ntoks = input_ids.shape[1]
         masks = (torch.rand((self.nmasks, ntoks)) < self.prob)
