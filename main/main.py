@@ -8,6 +8,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+import torch
 from torch import Tensor
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
