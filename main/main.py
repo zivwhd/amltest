@@ -27,7 +27,7 @@ from utils.utils_functions import (run_model, get_device, is_model_encoder_only,
                                    is_use_prompt)
 
 import torch
-
+from sloc import Sloc
 from captum.attr import (DeepLift, GradientShap, InputXGradient, IntegratedGradients, Lime)
 from evaluations.evaluations import evaluate_tokens_attributions
 
@@ -190,14 +190,15 @@ class Baselines:
                 _attr = explainer.attribute(input_embed, baselines = torch.cat([ref_input_embed, input_embed]),
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attribution_scores = summarize_attributions(_attr)
+            
+            if ExpArgs.attribution_scores_function == "TESTSLOC":
 
-            if ExpArgs.attribution_scores_function == AttrScoreFunctions.sloc.value:
                 with torch.no_grad():
                     print("input_ids", input_ids)
                     logits = run_model(model = self.model, input_ids = input_ids, is_return_logits = True)
-                    probs = run_model(model = self.model, input_ids = input_ids, is_return_logits = False)
+                    #probs = run_model(model = self.model, input_ids = input_ids, is_return_logits = False)
                     print("logits", logits)
-                    print("probs", logits)
+                    #print("probs", logits)
                 ##
                 explainer = Lime(self.lime_func)
                 _attr = explainer.attribute(input_ids, target = explained_model_logits.max(1)[1])
@@ -209,7 +210,12 @@ class Baselines:
 
                 #probs = torch.nn.functional.softmax(logits, dim = -1).cpu()         
                 raise Exception("Not implemented") 
-            
+
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.sloc.value:  
+                eval_model = lambda inp: run_model(model = self.model, input_ids = inp, is_return_logits = True)
+                explainer = Sloc()
+                attribution_scores = explainer.run(eval_model, input_ids, target = explained_model_logits.max(1)[1])
+
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.lime.value:
                 explainer = Lime(self.lime_func)
                 _attr = explainer.attribute(input_ids, target = explained_model_logits.max(1)[1])
