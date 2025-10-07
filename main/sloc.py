@@ -27,6 +27,7 @@ class Sloc:
 
         ntoks = input_ids.shape[1]
         masks = (torch.rand((self.nmasks, ntoks)) < self.prob)
+        masks = masks[masks.sum(dim=1) > 1, :]
         responses = []
         linput = input_ids[0].cpu().tolist()
         for idx in range(self.nmasks):            
