@@ -50,7 +50,7 @@ class Sloc:
         Y = resps
         X = masks * 1.0
         if self.with_bias:
-            masks = torch.concat([torch.ones(masks.shape[0],1), masks], dim=1)
+            X = torch.concat([torch.ones(X.shape[0],1), X], dim=1)
 
         weights = torch.sqrt(torch.ones(1) / X.shape[0])
         Xw = X * weights
