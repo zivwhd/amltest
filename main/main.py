@@ -217,7 +217,7 @@ class Baselines:
                 AttrScoreFunctions.logistic.value]:  
 
                 eval_model = lambda inp: run_model(model = self.model, input_ids = inp, is_return_logits = True)
-                with_bias = ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocB.value]
+                with_bias = ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocB.value, AttrScoreFunctions.logistic.value]
                 if ExpArgs.attribution_scores_function in [AttrScoreFunctions.logistic.value]:  
                     mode = "logistic"
                 else:

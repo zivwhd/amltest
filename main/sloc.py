@@ -9,6 +9,7 @@ import torch
 import sys
 from scipy.sparse.linalg import cg, gmres, lsqr
 from sklearn.linear_model import LogisticRegression
+import statsmodels.api as sm
 
 class Sloc:
 
@@ -86,9 +87,17 @@ class Sloc:
         X = masks * 1.0
 
         ###
-        model = LogisticRegression(
-            penalty='l2', C=self.l2_weight, solver='lbfgs')  # L2 regularization
-        model.fit(X.numpy(), Y.numpy())
-        sal = torch.tensor(model.coef_).unsqueeze(0)
+        #model = LogisticRegression(
+        #    penalty='l2', C=self.l2_weight, solver='lbfgs')  # L2 regularization
+        #model.fit(X.numpy(), Y.numpy())
+        if self.with_bias:
+            X = torch.concat([torch.ones(X.shape[0],1), X], dim=1)
+        
+        model = sm.GLM(Y, X, family=sm.families.Binomial())
+        results = model.fit()        
+        sal = torch.tensor(coefficients = results.params).unsqueeze(0)
+        if self.with_bias:
+            sal = sal[1:]
+
         return sal
 
