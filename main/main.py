@@ -222,7 +222,7 @@ class Baselines:
                     mode = "logistic"
                 else:
                     mode = "linear"
-                explainer = Sloc(with_bias=with_bias)
+                explainer = Sloc(with_bias=with_bias, mode=mode)
                 attribution_scores = explainer.run(eval_model, input_ids, target = explained_model_logits.max(1)[1])
 
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.lime.value:

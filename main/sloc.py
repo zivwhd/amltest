@@ -68,7 +68,7 @@ class Sloc:
         XTXw = Xw.T @ Xw
         XTY = Xw.T @ Y
         
-        c_magnitude = 0.01
+        c_magnitude = self.l2_weight
         XTX = XTXw + torch.eye(XTXw.shape[0]) *  c_magnitude / XTXw.shape[0]
         bb, _info = gmres(XTX.numpy(), XTY.numpy())
         sal = torch.tensor(bb)    
@@ -87,7 +87,7 @@ class Sloc:
 
         ###
         model = LogisticRegression(
-            penalty='l2', C=1.0, solver='lbfgs')  # L2 regularization
+            penalty='l2', C=self.l2_weight, solver='lbfgs')  # L2 regularization
         model.fit(X.numpy(), Y.numpy())
         sal = torch.tensor(model.coef_).unsqueeze(0)
         return sal
