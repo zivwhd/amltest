@@ -64,6 +64,7 @@ class AttrScoreFunctions(Enum):
     sloc = "sloc"
     slocB = "slocB"
     logistic = "logistic"
+    TEST="TEST"
 
 
 class TokenEvaluationOptions(Enum):

@@ -191,7 +191,7 @@ class Baselines:
                                             additional_forward_args = (attention_mask, position_embed, type_embed,), )
                 attribution_scores = summarize_attributions(_attr)
             
-            if ExpArgs.attribution_scores_function == "TESTSLOC":
+            if ExpArgs.attribution_scores_function == AttrScoreFunctions.TEST.value:
 
                 with torch.no_grad():
                     print("input_ids", input_ids)
