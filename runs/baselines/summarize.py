@@ -49,7 +49,7 @@ pgrouped = (
 pivoted = pgrouped.pivot_table(
     index=["task", "attribution_scores_function", "explained_model_backbone"],
     columns="evaluation_metric",
-    values="metric_result"
+    values="mean_metric_result"
 ).reset_index()
 
 # Rename columns
