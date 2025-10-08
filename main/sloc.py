@@ -8,13 +8,16 @@
 import torch
 import sys
 from scipy.sparse.linalg import cg, gmres, lsqr
+from sklearn.linear_model import LogisticRegression
 
 class Sloc:
 
-    def __init__(self, with_bias=False):
+    def __init__(self, with_bias=False, l2_weight=0.01, mode="linear"):
         self.prob = 0.5
         self.nmasks = 200
         self.with_bias = with_bias
+        self.l2_weight = 0.01
+        self.mode = mode
 
 
     def gen_mask_resp(self, run_model, input_ids, target, is_return_logits=False):
@@ -42,8 +45,16 @@ class Sloc:
 
         return masks, torch.Tensor(responses)
 
-    @torch.no_grad()
     def run(self, run_model, input_ids, target):
+        if self.mode == "linear":
+            return self.run_linear(run_model, input_ids, target)
+        elif self.mode == "logistic":
+            return self.run_logistic(run_model, input_ids, target)
+        else:
+            raise Exception(f"bad mode {self.mode}")
+        
+    @torch.no_grad()
+    def run_linear(self, run_model, input_ids, target):
         sys.stdout.flush()
         masks, resps = self.gen_mask_resp(run_model, input_ids, target)
 
@@ -64,5 +75,20 @@ class Sloc:
         if self.with_bias:
             sal = sal[1:]
         #print("shape", sal.shape)
+        return sal
+
+    @torch.no_grad()
+    def run_logistic(self, run_model, input_ids, target):
+        sys.stdout.flush()
+        masks, resps = self.gen_mask_resp(run_model, input_ids, target)
+
+        Y = resps
+        X = masks * 1.0
+
+        ###
+        model = LogisticRegression(
+            penalty='l2', C=1.0, solver='lbfgs')  # L2 regularization
+        model.fit(X.numpy(), Y.numpy())
+        sal = torch.tensor(model.coef_).unsqueeze(0)
         return sal
 

@@ -211,9 +211,17 @@ class Baselines:
                 #probs = torch.nn.functional.softmax(logits, dim = -1).cpu()         
                 raise Exception("Not implemented") 
 
-            if ExpArgs.attribution_scores_function in [AttrScoreFunctions.sloc.value, AttrScoreFunctions.slocB.value]:  
+            if ExpArgs.attribution_scores_function in [
+                AttrScoreFunctions.sloc.value, 
+                AttrScoreFunctions.slocB.value,
+                AttrScoreFunctions.logistic.value]:  
+
                 eval_model = lambda inp: run_model(model = self.model, input_ids = inp, is_return_logits = True)
                 with_bias = ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocB.value]
+                if ExpArgs.attribution_scores_function in [AttrScoreFunctions.logistic.value]:  
+                    mode = "logistic"
+                else:
+                    mode = "linear"
                 explainer = Sloc(with_bias=with_bias)
                 attribution_scores = explainer.run(eval_model, input_ids, target = explained_model_logits.max(1)[1])
 
