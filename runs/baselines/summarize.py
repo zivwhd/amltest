@@ -35,4 +35,38 @@ summary_df = pd.concat(all_grouped, ignore_index=True)
 
 # Save to OUT/summary.csv
 summary_df.to_csv(output_path, index=False)
+
+########
+
+all_grouped_df = summary_df.sort_values("file_path")
+pgrouped = (
+    all_grouped_df.groupby(["task", "attribution_scores_function", "explained_model_backbone", "evaluation_metric"])
+    .last()
+    .reset_index()
+)
+
+# Pivot to wide format
+pivoted = pgrouped.pivot_table(
+    index=["task", "attribution_scores_function", "explained_model_backbone"],
+    columns="evaluation_metric",
+    values="metric_result"
+).reset_index()
+
+# Rename columns
+pivoted = pivoted.rename(columns={
+    "SUFFICIENCY": "Shuff",
+    "EVAL_LOG_ODDS": "LO",
+    "COMPREHENSIVENESS": "Comp",
+    "AOPC_SUFFICIENCY": "AS",
+    "AOPC_COMPREHENSIVENESS": "AC"
+})
+
+# Ensure the columns order
+cols_order = ["task", "attribution_scores_function", "explained_model_backbone", "Shuff", "LO", "Comp", "AS", "AC"]
+pivoted = pivoted[cols_order]
+
+# Save to psummary.csv
+
+pivoted.to_csv(base_path / "psummary.csv", index=False)
+
 print(f"Summary saved to {output_path}")
