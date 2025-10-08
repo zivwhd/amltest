@@ -95,7 +95,9 @@ class Sloc:
         
         model = sm.GLM(Y.numpy(), X.numpy(), family=sm.families.Binomial())
         results = model.fit()        
-        sal = torch.tensor(results.params, dtype=torch.float32).unsqueeze(0)
+        sal = torch.tensor(results.params, dtype=torch.float32)
+        print(sal)
+        print(sal.shape)
         if self.with_bias:
             sal = sal[1:]
 
