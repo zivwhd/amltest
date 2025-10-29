@@ -451,7 +451,8 @@ class Baselines:
                                                                                       self.ref_token,
                                                                                       data = data_for_eval,
                                                                                       experiment_path = experiment_path,
-                                                                                      item_index = f"{i}_{item_id}")
+                                                                                      item_index = f"{i}_{item_id}",
+                                                                                      metric=metric)
 
                     gc.collect()
                     torch.cuda.empty_cache()
