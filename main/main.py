@@ -452,7 +452,7 @@ class Baselines:
                                                                                       data = data_for_eval,
                                                                                       experiment_path = experiment_path,
                                                                                       item_index = f"{i}_{item_id}",
-                                                                                      metric=metric)
+                                                                                      metric=metric.value)
 
                     gc.collect()
                     torch.cuda.empty_cache()
