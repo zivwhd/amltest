@@ -11,6 +11,7 @@ def evaluate_tokens_attributions(model, explained_tokenizer: AutoTokenizer, ref_
     with torch.no_grad():
         if metric is None:
             metric = ExpArgs.evaluation_metric
+            print("no metric passed - using ExpArgs")
         if (data.input.input_ids.squeeze().ndim != 1) or (data.tokens_attributions.squeeze().ndim != 1):
             raise ValueError("Unsupported input: Both input IDs and token attributions must have a batch size of 1.")
         if metric in [EvalMetric.SUFFICIENCY.value, EvalMetric.COMPREHENSIVENESS.value,
@@ -21,4 +22,4 @@ def evaluate_tokens_attributions(model, explained_tokenizer: AutoTokenizer, ref_
                                        item_index = item_index, eval_metric=metric)
             return evaluation_class.run_perturbation_test()
         else:
-            raise ValueError("unsupported ExpArgs.eval_metric selected")
+            raise ValueError(f"unsupported ExpArgs.eval_metric selected: {metric}" )
