@@ -43,7 +43,17 @@ class Baselines:
         print(f"run {attr_score_function}")
         init_baseline_exp()
         self.task = ExpArgs.task
-        self.metrics = metrics
+        self.metrics = metrics        
+        if len(metrics) == 1 and metrics[0].value ==  [EvalMetric.ALL.value]:
+            print("OVERRIDING ALL METRICS")
+            self.metrics = [
+                EvalMetric.SUFFICIENCY,
+                EvalMetric.COMPREHENSIVENESS,
+                EvalMetric.EVAL_LOG_ODDS,
+                EvalMetric.AOPC_SUFFICIENCY,
+                EvalMetric.AOPC_COMPREHENSIVENESS
+            ]
+
         self.exp_path = f"{ExpArgs.default_root_dir}/{exp_name}"
         os.makedirs(self.exp_path, exist_ok = True)
         self.model, self.model_path = get_model()

@@ -85,12 +85,13 @@ class Sloc:
 
         Y = resps
         X = masks * 1.0
-
+        
+        add_bias = self.with_bias
         ###
         #model = LogisticRegression(
         #    penalty='l2', C=self.l2_weight, solver='lbfgs')  # L2 regularization
         #model.fit(X.numpy(), Y.numpy())
-        if self.with_bias:
+        if add_bias:
             X = torch.concat([torch.ones(X.shape[0],1), X], dim=1)
         
         model = sm.GLM(Y.numpy(), X.numpy(), family=sm.families.Binomial())
@@ -98,7 +99,7 @@ class Sloc:
         sal = torch.tensor(results.params, dtype=torch.float32)
         print(sal)
         print(sal.shape)
-        if self.with_bias:
+        if add_bias:
             sal = sal[1:]
 
         return sal
