@@ -44,6 +44,7 @@ class Baselines:
         init_baseline_exp()
         self.task = ExpArgs.task
         self.metrics = metrics        
+        print("Baselines ctor")
         if len(metrics) == 1 and metrics[0].value ==  [EvalMetric.ALL.value]:
             print("OVERRIDING ALL METRICS")
             self.metrics = [
