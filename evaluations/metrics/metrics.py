@@ -16,7 +16,9 @@ from utils.utils_functions import get_device, get_model_special_tokens
 class Metrics:
 
     def __init__(self, model, explained_tokenizer: AutoTokenizer, ref_token_id, data: DataForEvaluation,
-                 item_index: str, experiment_path: str):
+                 item_index: str, experiment_path: str, eval_metric = None):
+        if eval_metric is None:
+            eval_metric = ExpArgs.evaluation_metric
         self.model = model
         self.explained_tokenizer = explained_tokenizer
         self.ref_token_id = ref_token_id
@@ -27,8 +29,9 @@ class Metrics:
         self.item_index = item_index
         self.experiment_path = experiment_path
         self.metric_functions = MetricsFunctions(model, explained_tokenizer, ref_token_id, self.special_tokens)
-        self.pretu_steps = MetricsMetaData.top_k[ExpArgs.evaluation_metric]
+        self.pretu_steps = MetricsMetaData.top_k[eval_metric]
         self.output_path = Path(experiment_path, "support_results_df.csv")
+        self.evaluation_metric = eval_metric
 
     def run_perturbation_test(self):
         results_steps: List[float] = []
@@ -38,9 +41,9 @@ class Metrics:
             results_steps.append(step_metric_result)
 
         # AOPC or one step only
-        if ExpArgs.evaluation_metric in [EvalMetric.AOPC_SUFFICIENCY.value, EvalMetric.AOPC_COMPREHENSIVENESS.value]:
+        if self.evaluation_metric in [EvalMetric.AOPC_SUFFICIENCY.value, EvalMetric.AOPC_COMPREHENSIVENESS.value]:
             metric_res = sum(results_steps) / (len(self.pretu_steps) + 1)
-        elif ExpArgs.evaluation_metric in [EvalMetric.SUFFICIENCY.value, EvalMetric.COMPREHENSIVENESS.value,
+        elif self.evaluation_metric in [EvalMetric.SUFFICIENCY.value, EvalMetric.COMPREHENSIVENESS.value,
                                            EvalMetric.EVAL_LOG_ODDS.value]:
             if len(results_steps) > 1:
                 raise ValueError("has more than 1 value without AOPC calc")
@@ -53,13 +56,13 @@ class Metrics:
         return metric_res, results_item
 
     def run_metric(self, item_args):
-        if ExpArgs.evaluation_metric in [EvalMetric.SUFFICIENCY.value, EvalMetric.AOPC_SUFFICIENCY.value]:
+        if self.evaluation_metric in [EvalMetric.SUFFICIENCY.value, EvalMetric.AOPC_SUFFICIENCY.value]:
             return self.metric_functions.sufficiency(item_args)
 
-        elif ExpArgs.evaluation_metric in [EvalMetric.COMPREHENSIVENESS.value, EvalMetric.AOPC_COMPREHENSIVENESS.value]:
+        elif self.evaluation_metric in [EvalMetric.COMPREHENSIVENESS.value, EvalMetric.AOPC_COMPREHENSIVENESS.value]:
             return self.metric_functions.comprehensiveness(item_args)
 
-        elif ExpArgs.evaluation_metric == EvalMetric.EVAL_LOG_ODDS.value:
+        elif self.evaluation_metric == EvalMetric.EVAL_LOG_ODDS.value:
             return self.metric_functions.log_odds(item_args)
         else:
             raise ValueError("unsupported metric_functions selected")
@@ -71,7 +74,7 @@ class Metrics:
 
     def transform_results(self, metric_result):
         item = MetricResults(item_index = self.item_index, task = ExpArgs.task.name,
-                             evaluation_metric = ExpArgs.evaluation_metric,
+                             evaluation_metric = self.evaluation_metric,
                              explained_model_backbone = ExpArgs.explained_model_backbone,
                              metric_result = metric_result, metric_result_str = "{:.6f}".format(metric_result),
                              metric_steps_result = None, steps_k = self.pretu_steps,
