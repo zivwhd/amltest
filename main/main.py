@@ -240,10 +240,9 @@ class Baselines:
                 else:
                     baseline_token = None
 
-                explainer = Sloc(with_bias=with_bias, mode=mode)
+                explainer = Sloc(with_bias=with_bias, mode=mode, baseline_token=baseline_token)
                 attribution_scores = explainer.run(eval_model, input_ids, 
-                                                   target = explained_model_logits.max(1)[1],
-                                                   baseline_token=baseline_token)
+                                                   target = explained_model_logits.max(1)[1])
 
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.lime.value:
                 explainer = Lime(self.lime_func)
