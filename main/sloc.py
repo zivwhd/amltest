@@ -13,12 +13,13 @@ import statsmodels.api as sm
 
 class Sloc:
 
-    def __init__(self, with_bias=False, l2_weight=0.01, mode="linear"):
+    def __init__(self, with_bias=False, l2_weight=0.01, mode="linear", baseline_token=None):
         self.prob = 0.5
         self.nmasks = 200
         self.with_bias = with_bias
         self.l2_weight = 0.01
         self.mode = mode
+        self.baseline_token = baseline_token
 
 
     def gen_mask_resp(self, run_model, input_ids, target, is_return_logits=False):
@@ -33,12 +34,16 @@ class Sloc:
 
         ntoks = input_ids.shape[1]
         masks = (torch.rand((self.nmasks, ntoks)) < self.prob)
-        masks = masks[masks.sum(dim=1) > 1, :]
+        if self.baseline_token is None:
+            masks = masks[masks.sum(dim=1) > 1, :]
         responses = []
         linput = input_ids[0].cpu().tolist()
         for idx in range(masks.shape[0]):            
             imask = masks[idx].tolist()
-            pert = [[tok for tok, lit in zip(linput, imask) if lit]]
+            if self.baseline_token:
+                pert = [[(tok if lit else self.baseline_token) for tok, lit in zip(linput, imask)]]
+            else:
+                pert = [[tok for tok, lit in zip(linput, imask) if lit]]
             tpert = torch.tensor(pert, device=device)
             out = rmodel(tpert)
             resp = out[0, target].tolist()[0] - base

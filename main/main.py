@@ -109,6 +109,7 @@ class Baselines:
         return f"{self.exp_path}/metric_{metric.value}"
 
     def set_ref_token(self):
+        print("### ref-token-name", ExpArgs.ref_token_name)
         if ExpArgs.ref_token_name == RefTokenNameTypes.MASK.value:
             self.ref_token = self.tokenizer.mask_token_id
         elif ExpArgs.ref_token_name == RefTokenNameTypes.PAD.value:
@@ -224,6 +225,7 @@ class Baselines:
 
             if ExpArgs.attribution_scores_function in [
                 AttrScoreFunctions.sloc.value, 
+                AttrScoreFunctions.slocMask.value, 
                 AttrScoreFunctions.slocB.value,
                 AttrScoreFunctions.logistic.value]:  
 
@@ -233,8 +235,15 @@ class Baselines:
                     mode = "logistic"
                 else:
                     mode = "linear"
+                if ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocMask.value]:  
+                    baseline_token = self.ref_token
+                else:
+                    baseline_token = None
+
                 explainer = Sloc(with_bias=with_bias, mode=mode)
-                attribution_scores = explainer.run(eval_model, input_ids, target = explained_model_logits.max(1)[1])
+                attribution_scores = explainer.run(eval_model, input_ids, 
+                                                   target = explained_model_logits.max(1)[1],
+                                                   baseline_token=baseline_token)
 
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.lime.value:
                 explainer = Lime(self.lime_func)
