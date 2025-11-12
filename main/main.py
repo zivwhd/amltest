@@ -225,7 +225,7 @@ class Baselines:
 
             if ExpArgs.attribution_scores_function in [
                 AttrScoreFunctions.sloc.value, 
-                AttrScoreFunctions.slocMask.value, 
+                AttrScoreFunctions.slocM.value, 
                 AttrScoreFunctions.slocB.value,
                 AttrScoreFunctions.logistic.value]:  
 
@@ -235,7 +235,7 @@ class Baselines:
                     mode = "logistic"
                 else:
                     mode = "linear"
-                if ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocMask.value]:  
+                if ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocM.value]:  
                     baseline_token = self.ref_token
                 else:
                     baseline_token = None

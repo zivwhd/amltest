@@ -34,10 +34,18 @@ class Sloc:
 
         ntoks = input_ids.shape[1]
         masks = (torch.rand((self.nmasks, ntoks)) < self.prob)
+        linput = input_ids[0].cpu().tolist()
+
         if self.baseline_token is None:
             masks = masks[masks.sum(dim=1) > 1, :]
+        else:
+            baseline = [[(self.baseline_token) for tok in linput]]
+            baseline = torch.tensor(baseline, device=device)
+            out = rmodel(baseline)
+            base = out[0, target].tolist()[0]
+            
         responses = []
-        linput = input_ids[0].cpu().tolist()
+        
         for idx in range(masks.shape[0]):            
             imask = masks[idx].tolist()
             if self.baseline_token:
