@@ -257,7 +257,7 @@ class Baselines:
                 words = itokens
                 wscores = to_list(attribution_scores)
                 if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
-                    wscores = wscores[1]
+                    wscores = wscores[1:]
                 else:
                     wscores = wscores[1:-1]
                 if len(words) == len(wscores):
