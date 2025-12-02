@@ -251,7 +251,7 @@ class Baselines:
                 
                 print("#############################################")
                 print(f"TEXT: {txt}")
-                words = txt.spit()
+                words = txt.split()
                 wscores = to_list(attribution_scores)[1:-1]
                 if len(words) == len(wscores):
                     print('SCORES:', str(' ').join([f'{wrd}:{score:.3f}' for wrd, score in zip(words, wscores)]))
