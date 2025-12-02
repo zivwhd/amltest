@@ -251,10 +251,15 @@ class Baselines:
                 
                 print("#############################################")
                 print(f"TEXT: {txt}")
-                print(f"INPUT_IDS: {to_list(input_ids)}")
-                print(f"TARGET: {to_list(explained_model_logits.max(1)[1])}")
-                print(f"SCORES: {to_list(attribution_scores)}")
-                print(origin_input_ids, origin_ref_input_ids)
+                words = txt.spit()
+                wscores = to_list(attribution_scores)[1:-1]
+                if len(words) == len(wscores):
+                    print('SCORES:', str(' ').join([f'{wrd}:{score:.3f}' for wrd, score in zip(words, wscores)]))
+                else:
+                    print("MISMATCH")
+                    print(f"INPUT_IDS: {to_list(input_ids)}")                
+                    print(f"SCORES: {to_list(attribution_scores)}")
+                
 
                 
 
