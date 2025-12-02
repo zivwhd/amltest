@@ -256,7 +256,10 @@ class Baselines:
                 print(f"TOKENS: {itokens}")
                 words = itokens
                 wscores = to_list(attribution_scores)
-                wscores = wscores[1:-1]
+                if ExpArgs.explained_model_backbone == ModelBackboneTypes.LLAMA.value:
+                    wscores = wscores[1]
+                else:
+                    wscores = wscores[1:-1]
                 if len(words) == len(wscores):
                     print('SCORES:', str(' ').join([f'{wrd}:{score:.3f}' for wrd, score in zip(words, wscores)]))
                 else:
