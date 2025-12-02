@@ -254,6 +254,7 @@ class Baselines:
                 print(f"INPUT_IDS: {to_list(input_ids)}")
                 print(f"TARGET: {to_list(explained_model_logits.max(1)[1])}")
                 print(f"SCORES: {to_list(attribution_scores)}")
+                print(origin_input_ids, origin_ref_input_ids)
 
                 
 
