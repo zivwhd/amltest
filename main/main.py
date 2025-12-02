@@ -32,6 +32,11 @@ from captum.attr import (DeepLift, GradientShap, InputXGradient, IntegratedGradi
 from evaluations.evaluations import evaluate_tokens_attributions
 
 
+def to_list(x):
+    if hasattr(x, "tolist"):
+        return x.tolist()
+    return list(x)
+
 def summarize_attributions(attributions, sum_dim = -1):
     attributions = attributions.sum(dim = sum_dim).squeeze(0)
     attributions = attributions / torch.norm(attributions)
@@ -243,6 +248,14 @@ class Baselines:
                 explainer = Sloc(with_bias=with_bias, mode=mode, baseline_token=baseline_token)
                 attribution_scores = explainer.run(eval_model, input_ids, 
                                                    target = explained_model_logits.max(1)[1])
+                
+                print("#############################################")
+                print(f"TEXT: {txt}")
+                print(f"INPUT_IDS: {to_list(input_ids)}")
+                print(f"TARGET: {to_list(explained_model_logits.max(1)[1])}")
+                print(f"SCORES: {to_list(attribution_scores)}")
+
+                
 
             if ExpArgs.attribution_scores_function == AttrScoreFunctions.lime.value:
                 explainer = Lime(self.lime_func)
