@@ -252,6 +252,8 @@ class Baselines:
                 print("#############################################")
                 print(f"TEXT: {txt}")
                 print(f"TARGET: {to_list(explained_model_logits.max(1)[1])}")
+                itokens = self.tokenizer.tokenize(txt)
+                print("TOKENS: {itokens}")
                 words = txt.split()
                 wscores = to_list(attribution_scores)[1:-1]
                 if len(words) == len(wscores):
