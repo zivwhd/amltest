@@ -13,14 +13,23 @@ import statsmodels.api as sm
 
 class Sloc:
 
-    def __init__(self, with_bias=False, l2_weight=0.01, mode="linear", baseline_token=None):
+    def __init__(self, with_bias=False, l2_weight=0.01, mode="linear", baseline_token=None, pwidth=None):
         self.prob = 0.5
         self.nmasks = 200
         self.with_bias = with_bias
         self.l2_weight = 0.01
         self.mode = mode
         self.baseline_token = baseline_token
+        self.pwidth = pwidth
 
+
+    def gen_part_mask(self, shape, pwidth, prob):
+        flip_prob = 1.0 / pwidth
+        flip = (torch.rand(shape) < flip_prob)*1
+        idx = flip.cumsum(dim=1) + (torch.arange(flip.shape[0]) * flip.shape[1]).unsqueeze(1)
+        rnd = torch.rand(flip.numel())
+        rnd = rnd[idx.flatten()].reshape(flip.shape)
+        return rnd < prob
 
     def gen_mask_resp(self, run_model, input_ids, target, is_return_logits=False):
         
@@ -33,7 +42,10 @@ class Sloc:
         base = 0 #rmodel(torch.tensor([[]], device=device))[0,target].tolist()
 
         ntoks = input_ids.shape[1]
-        masks = (torch.rand((self.nmasks, ntoks)) < self.prob)
+        if self.pwidth is None:
+            masks = (torch.rand((self.nmasks, ntoks)) < self.prob)
+        else:
+            masks = self.gen_part_mask((self.nmasks, ntoks), self.pwidth, self.prob)
         linput = input_ids[0].cpu().tolist()
 
         if self.baseline_token is None:

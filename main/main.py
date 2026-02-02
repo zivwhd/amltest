@@ -232,20 +232,25 @@ class Baselines:
                 AttrScoreFunctions.sloc.value, 
                 AttrScoreFunctions.slocM.value, 
                 AttrScoreFunctions.slocB.value,
+                AttrScoreFunctions.slocMp.value,
                 AttrScoreFunctions.logistic.value]:  
 
                 eval_model = lambda inp: run_model(model = self.model, input_ids = inp, is_return_logits = True)
                 with_bias = ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocB.value, AttrScoreFunctions.logistic.value]
+                pwidth = None
                 if ExpArgs.attribution_scores_function in [AttrScoreFunctions.logistic.value]:  
                     mode = "logistic"
                 else:
                     mode = "linear"
-                if ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocM.value]:  
+                if ExpArgs.attribution_scores_function in [AttrScoreFunctions.slocM.value, AttrScoreFunctions.slocMp.value]:  
                     baseline_token = self.ref_token
                 else:
                     baseline_token = None
 
-                explainer = Sloc(with_bias=with_bias, mode=mode, baseline_token=baseline_token)
+                if ExpArgs.attribution_scores_function in [ AttrScoreFunctions.slocMp.value]:  
+                    pwdith = 2
+
+                explainer = Sloc(with_bias=with_bias, mode=mode, baseline_token=baseline_token, pwidth=pwidth)
                 attribution_scores = explainer.run(eval_model, input_ids, 
                                                    target = explained_model_logits.max(1)[1])
                 
