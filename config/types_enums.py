@@ -65,6 +65,7 @@ class AttrScoreFunctions(Enum):
     sloc = "sloc"
     slocB = "slocB"
     slocM = "slocM"
+    slocMp = "slocMp"
     logistic = "logistic"
     TEST="TEST"
 
