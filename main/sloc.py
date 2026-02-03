@@ -15,7 +15,7 @@ class Sloc:
 
     def __init__(self, with_bias=False, l2_weight=0.01, mode="linear", baseline_token=None, pwidth=None):
         self.prob = 0.5
-        self.nmasks = 200
+        self.nmasks = 600
         self.with_bias = with_bias
         self.l2_weight = 0.001
         self.mode = mode
