@@ -250,6 +250,9 @@ class Baselines:
                 if ExpArgs.attribution_scores_function in [ AttrScoreFunctions.slocMp.value]:  
                     pwdith = 2
 
+                print("#############################################")
+                print(f"TEXT: {txt}")
+
                 explainer = Sloc(with_bias=with_bias, mode=mode, baseline_token=baseline_token, pwidth=pwidth)
                 attribution_scores = explainer.run(eval_model, input_ids, 
                                                    target = explained_model_logits.max(1)[1])

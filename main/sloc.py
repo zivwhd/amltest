@@ -17,13 +17,14 @@ class Sloc:
         self.prob = 0.5
         self.nmasks = 200
         self.with_bias = with_bias
-        self.l2_weight = 0.01
+        self.l2_weight = 0.001
         self.mode = mode
         self.baseline_token = baseline_token
         self.pwidth = pwidth
-
+        print(f"Sloc: pwidth={self.pwidth}; mode={self.mode}; baseline={self.baseline_token}")
 
     def gen_part_mask(self, shape, pwidth, prob):
+        print("gen_part_mask", shape, pwidth, prob)
         flip_prob = 1.0 / pwidth
         flip = (torch.rand(shape) < flip_prob)*1
         idx = flip.cumsum(dim=1) + (torch.arange(flip.shape[0]) * flip.shape[1]).unsqueeze(1)
@@ -32,7 +33,7 @@ class Sloc:
         return rnd < prob
 
     def gen_mask_resp(self, run_model, input_ids, target, is_return_logits=False):
-        
+        print("gen_mask_resp")
         assert not is_return_logits
         device = input_ids.device
         def rmodel(inp):
@@ -60,11 +61,11 @@ class Sloc:
         
         for idx in range(masks.shape[0]):            
             imask = masks[idx].tolist()
-            if self.baseline_token:
+            if self.baseline_token is not None:
                 pert = [[(tok if lit else self.baseline_token) for tok, lit in zip(linput, imask)]]
             else:
                 pert = [[tok for tok, lit in zip(linput, imask) if lit]]
-            print("EE", pert, len(pert))
+            print("EE", pert, len(pert[0]))
             tpert = torch.tensor(pert, device=device)
             out = rmodel(tpert)
             resp = out[0, target].tolist()[0] - base
