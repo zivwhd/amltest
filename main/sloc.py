@@ -64,6 +64,7 @@ class Sloc:
                 pert = [[(tok if lit else self.baseline_token) for tok, lit in zip(linput, imask)]]
             else:
                 pert = [[tok for tok, lit in zip(linput, imask) if lit]]
+            print("EE", pert, len(pert))
             tpert = torch.tensor(pert, device=device)
             out = rmodel(tpert)
             resp = out[0, target].tolist()[0] - base
